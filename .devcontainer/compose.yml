@@ -1,0 +1,15 @@
+# Reference: https://docs.docker.com/reference/compose-file/
+name: pet-house
+
+services:
+  devcontainer:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    command: bash -c "sleep infinity"
+    container_name: devcontainer
+    ports:
+      - 8000:8000 # api (uvicorn)
+    volumes:
+      - ..:/workspaces/pet-house
+    working_dir: /workspaces/pet-house
