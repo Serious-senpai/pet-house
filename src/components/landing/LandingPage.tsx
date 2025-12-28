@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import AuthModal from '../auth/AuthModal';
+import PetsPanel from '@/components/pets/PetsPanel';
 import styles from './LandingPage.module.css';
 
 const features = [
@@ -144,13 +145,13 @@ export default function LandingPage() {
                         </div>
                     )}
                     {user && (
-                        <div className={styles.welcomeCard}>
-                            <h3>Welcome back, {user.full_name}! 👋</h3>
-                            <p>You are logged in as {getRoleDisplayName(user.role)}.</p>
-                            <p className={styles.welcomeNote}>
-                                Dashboard and additional features coming soon...
-                            </p>
-                        </div>
+                        <>
+                            <div className={styles.welcomeCard}>
+                                <h3>Welcome back, {user.full_name}! 👋</h3>
+                                <p>You are logged in as {getRoleDisplayName(user.role)}.</p>
+                            </div>
+                            <PetsPanel />
+                        </>
                     )}
                 </div>
                 <div className={styles.heroImage}>

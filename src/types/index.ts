@@ -16,3 +16,16 @@ export interface AuthState {
     loading: boolean;
     error: string | null;
 }
+
+export interface Pet {
+    id: string;
+    owner_id: string;
+    name: string;
+    date_of_birth: string | null;
+    breed: string | null;
+    weight_kg: number | null;
+    next_vaccination_date: string | null;
+    notes: string | null;
+    created_at: string;
+    updated_at: string;
+}
