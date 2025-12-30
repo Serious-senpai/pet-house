@@ -589,3 +589,71 @@
         text-align: center;
     }
 }
+
+.dashboardSection {
+  padding: 24px 0 60px;
+}
+
+.dashboardContainer {
+  width: min(1200px, 92%);
+  margin: 0 auto;
+}
+
+.headerLinkButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 10px 16px;
+  border-radius: 10px;
+
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+
+  border: 1px solid #c7c9ff;      /* viền tím nhạt */
+  color: #5b5fe9;
+  background: #ffffff;
+
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.05s ease;
+}
+
+.headerLinkButton:hover {
+  background: #f4f5ff;
+  border-color: #aeb2ff;
+}
+
+.headerLinkButton:active {
+  transform: translateY(1px);
+}
+
+.userActions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.appointmentsButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #fff;
+  color: rgba(15, 23, 42, 0.85);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.appointmentsButton:hover {
+  background: rgba(15, 23, 42, 0.03);
+}
+
+
+

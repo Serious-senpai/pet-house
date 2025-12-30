@@ -7,6 +7,8 @@ import styles from './AuthForms.module.css';
 
 interface RegisterFormProps {
     onSwitchToLogin: () => void;
+    onBack?: () => void;
+    backLabel?: string;
 }
 
 const roleOptions: { value: UserRole; label: string; description: string }[] = [
@@ -16,7 +18,11 @@ const roleOptions: { value: UserRole; label: string; description: string }[] = [
     { value: 'admin', label: 'Administrator', description: 'Register as an administrator' },
 ];
 
-export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
+export default function RegisterForm({
+    onSwitchToLogin,
+    onBack,
+    backLabel = 'Quay lại trang chủ',
+}: RegisterFormProps) {
     const { register, loading, error, clearError } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -166,6 +172,12 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
                 <button type="submit" className={styles.submitButton} disabled={loading}>
                     {loading ? 'Creating Account...' : 'Create Account'}
                 </button>
+                {onBack && (
+                    <button type="button" onClick={onBack} className={styles.backLink}>
+                        <span aria-hidden>←</span>
+                        {backLabel}
+                    </button>
+                )}
             </form>
 
             <p className={styles.switchText}>

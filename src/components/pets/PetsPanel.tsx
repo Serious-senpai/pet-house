@@ -6,11 +6,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Pet } from '@/types';
 import styles from './PetsPanel.module.css';
 
-type EditablePet = Pick<Pet, 'id' | 'owner_id' | 'name' | 'date_of_birth' | 'breed' | 'weight_kg' | 'next_vaccination_date' | 'notes'>;
+type EditablePet = Pick<
+    Pet,
+    'id' | 'owner_id' | 'name' | 'date_of_birth' | 'breed' | 'weight_kg' | 'next_vaccination_date' | 'notes'
+>;
 
 function toDateInputValue(value: string | null): string {
     if (!value) return '';
-    // Accept either YYYY-MM-DD or ISO; normalize to YYYY-MM-DD.
     return value.length >= 10 ? value.slice(0, 10) : value;
 }
 
@@ -33,6 +35,19 @@ export default function PetsPanel() {
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
+    // Edit modal
+    const [editingPet, setEditingPet] = useState<Pet | null>(null);
+    const [editDraft, setEditDraft] = useState({
+        name: '',
+        date_of_birth: '',
+        breed: '',
+        weight_kg: '',
+        next_vaccination_date: '',
+        notes: '',
+    });
+
+    // Add modal (pet owner)
+    const [addOpen, setAddOpen] = useState(false);
     const [newPet, setNewPet] = useState({
         name: '',
         date_of_birth: '',
@@ -56,9 +71,7 @@ export default function PetsPanel() {
         setError(null);
 
         const query = supabase.from('pets').select('*').order('created_at', { ascending: false });
-        const { data, error } = isPetOwner
-            ? await query.eq('owner_id', user.id)
-            : await query;
+        const { data, error } = isPetOwner ? await query.eq('owner_id', user.id) : await query;
 
         if (error) {
             setError(error.message);
@@ -73,13 +86,51 @@ export default function PetsPanel() {
     useEffect(() => {
         setPets([]);
         setError(null);
+        setEditingPet(null);
+        setAddOpen(false);
+
         if (!user) return;
         void fetchPets();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user?.id, user?.role]);
 
-    const handleAddPet = async (e: React.FormEvent) => {
-        e.preventDefault();
+    useEffect(() => {
+        if (!editingPet) return;
+
+        setEditDraft({
+            name: editingPet.name ?? '',
+            date_of_birth: toDateInputValue(editingPet.date_of_birth),
+            breed: editingPet.breed ?? '',
+            weight_kg:
+                editingPet.weight_kg === null || editingPet.weight_kg === undefined
+                    ? ''
+                    : String(editingPet.weight_kg),
+            next_vaccination_date: toDateInputValue(editingPet.next_vaccination_date),
+            notes: editingPet.notes ?? '',
+        });
+    }, [editingPet]);
+
+    const resetNewPet = () => {
+        setNewPet({
+            name: '',
+            date_of_birth: '',
+            breed: '',
+            weight_kg: '',
+            next_vaccination_date: '',
+            notes: '',
+        });
+    };
+
+    const openAddModal = () => {
+        if (!isPetOwner) return;
+        setError(null);
+        resetNewPet();
+        setAddOpen(true);
+    };
+
+    const closeAddModal = () => setAddOpen(false);
+
+    const handleCreatePet = async () => {
         if (!user) return;
 
         if (!isPetOwner) {
@@ -113,21 +164,14 @@ export default function PetsPanel() {
                 return;
             }
 
-            setNewPet({
-                name: '',
-                date_of_birth: '',
-                breed: '',
-                weight_kg: '',
-                next_vaccination_date: '',
-                notes: '',
-            });
-
-            // Optimistic update; also keeps UI snappy.
             if (data) {
                 setPets((prev) => [data as Pet, ...prev]);
             } else {
                 await fetchPets();
             }
+
+            closeAddModal();
+            resetNewPet();
         } catch (err) {
             console.error('Add pet exception:', err);
             setError('Failed to add pet. Please try again.');
@@ -175,6 +219,8 @@ export default function PetsPanel() {
 
     const deletePet = async (petId: string) => {
         if (!user) return;
+
+        // theo nghiệp vụ hiện tại: chỉ pet_owner được remove
         if (!isPetOwner) {
             setError('Only pet owners can remove pets.');
             return;
@@ -206,6 +252,27 @@ export default function PetsPanel() {
         }
     };
 
+    const handleSaveEdit = async () => {
+        if (!editingPet) return;
+
+        const name = editDraft.name.trim();
+        if (!name) {
+            setError('Pet name is required.');
+            return;
+        }
+
+        await updatePet(editingPet.id, {
+            name,
+            date_of_birth: editDraft.date_of_birth ? editDraft.date_of_birth : null,
+            breed: editDraft.breed.trim() ? editDraft.breed.trim() : null,
+            weight_kg: parseWeight(editDraft.weight_kg),
+            next_vaccination_date: editDraft.next_vaccination_date ? editDraft.next_vaccination_date : null,
+            notes: editDraft.notes.trim() ? editDraft.notes.trim() : null,
+        });
+
+        setEditingPet(null);
+    };
+
     if (!user) return null;
 
     return (
@@ -219,268 +286,293 @@ export default function PetsPanel() {
                             : 'Update pet details. (Pet owners can only edit their own pets.)'}
                     </div>
                 </div>
-                <div className={styles.hint}>{loading ? 'Loading…' : `${pets.length} total`}</div>
-            </div>
 
-            {error && <div className={styles.error}>{error}</div>}
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                    <div className={styles.hint}>{loading ? 'Loading…' : `${pets.length} total`}</div>
 
-            {isPetOwner && (
-                <div className={styles.addBlock}>
-                    <form onSubmit={handleAddPet} className={styles.form}>
-                        <div className={styles.field}>
-                            <label className={styles.label} htmlFor="petName">Name *</label>
-                            <input
-                                id="petName"
-                                className={styles.input}
-                                value={newPet.name}
-                                onChange={(e) => setNewPet((p) => ({ ...p, name: e.target.value }))}
-                                placeholder="e.g. Mochi"
-                                disabled={savingId === '__new__'}
-                            />
-                        </div>
-
-                        <div className={styles.field}>
-                            <label className={styles.label} htmlFor="petDob">Date of birth</label>
-                            <input
-                                id="petDob"
-                                type="date"
-                                className={styles.input}
-                                value={newPet.date_of_birth}
-                                onChange={(e) => setNewPet((p) => ({ ...p, date_of_birth: e.target.value }))}
-                                disabled={savingId === '__new__'}
-                            />
-                        </div>
-
-                        <div className={styles.field}>
-                            <label className={styles.label} htmlFor="petBreed">Breed</label>
-                            <input
-                                id="petBreed"
-                                className={styles.input}
-                                value={newPet.breed}
-                                onChange={(e) => setNewPet((p) => ({ ...p, breed: e.target.value }))}
-                                placeholder="e.g. Golden Retriever"
-                                disabled={savingId === '__new__'}
-                            />
-                        </div>
-
-                        <div className={styles.field}>
-                            <label className={styles.label} htmlFor="petWeight">Weight (kg)</label>
-                            <input
-                                id="petWeight"
-                                inputMode="decimal"
-                                className={styles.input}
-                                value={newPet.weight_kg}
-                                onChange={(e) => setNewPet((p) => ({ ...p, weight_kg: e.target.value }))}
-                                placeholder="e.g. 12.5"
-                                disabled={savingId === '__new__'}
-                            />
-                        </div>
-
-                        <div className={styles.field}>
-                            <label className={styles.label} htmlFor="petVacc">Next vaccination date</label>
-                            <input
-                                id="petVacc"
-                                type="date"
-                                className={styles.input}
-                                value={newPet.next_vaccination_date}
-                                onChange={(e) => setNewPet((p) => ({ ...p, next_vaccination_date: e.target.value }))}
-                                disabled={savingId === '__new__'}
-                            />
-                        </div>
-
-                        <div className={styles.field} style={{ gridColumn: '1 / -1' }}>
-                            <label className={styles.label} htmlFor="petNotes">Notes</label>
-                            <textarea
-                                id="petNotes"
-                                className={styles.textarea}
-                                value={newPet.notes}
-                                onChange={(e) => setNewPet((p) => ({ ...p, notes: e.target.value }))}
-                                placeholder="Additional notes…"
-                                disabled={savingId === '__new__'}
-                            />
-                        </div>
-
-                        <div className={styles.actions} style={{ gridColumn: '1 / -1', justifyContent: 'flex-end' }}>
-                            <button
-                                type="submit"
-                                className={`${styles.button} ${styles.buttonPrimary}`}
-                                disabled={savingId === '__new__'}
-                            >
-                                {savingId === '__new__' ? 'Adding…' : 'Add Pet'}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            )}
-
-            <div className={styles.grid}>
-                {pets.map((pet) => {
-                    const editable = canEditPet(pet);
-                    return (
-                        <PetCard
-                            key={pet.id}
-                            pet={pet}
-                            editable={editable}
-                            isPetOwner={isPetOwner}
-                            saving={savingId === pet.id}
-                            deleting={deletingId === pet.id}
-                            onSave={(updates) => updatePet(pet.id, updates)}
-                            onDelete={() => deletePet(pet.id)}
-                        />
-                    );
-                })}
-
-                {!loading && pets.length === 0 && (
-                    <div className={styles.hint}>
-                        {isPetOwner ? 'No pets yet. Add your first pet above.' : 'No pets found.'}
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-}
-
-function PetCard({
-    pet,
-    editable,
-    isPetOwner,
-    saving,
-    deleting,
-    onSave,
-    onDelete,
-}: {
-    pet: Pet;
-    editable: boolean;
-    isPetOwner: boolean;
-    saving: boolean;
-    deleting: boolean;
-    onSave: (updates: Partial<EditablePet>) => void;
-    onDelete: () => void;
-}) {
-    const [draft, setDraft] = useState({
-        name: pet.name ?? '',
-        date_of_birth: toDateInputValue(pet.date_of_birth),
-        breed: pet.breed ?? '',
-        weight_kg: pet.weight_kg === null || pet.weight_kg === undefined ? '' : String(pet.weight_kg),
-        next_vaccination_date: toDateInputValue(pet.next_vaccination_date),
-        notes: pet.notes ?? '',
-    });
-
-    useEffect(() => {
-        setDraft({
-            name: pet.name ?? '',
-            date_of_birth: toDateInputValue(pet.date_of_birth),
-            breed: pet.breed ?? '',
-            weight_kg: pet.weight_kg === null || pet.weight_kg === undefined ? '' : String(pet.weight_kg),
-            next_vaccination_date: toDateInputValue(pet.next_vaccination_date),
-            notes: pet.notes ?? '',
-        });
-    }, [pet]);
-
-    const handleSave = () => {
-        const name = draft.name.trim();
-        if (!name) return;
-
-        onSave({
-            name,
-            date_of_birth: draft.date_of_birth ? draft.date_of_birth : null,
-            breed: draft.breed.trim() ? draft.breed.trim() : null,
-            weight_kg: parseWeight(draft.weight_kg),
-            next_vaccination_date: draft.next_vaccination_date ? draft.next_vaccination_date : null,
-            notes: draft.notes.trim() ? draft.notes.trim() : null,
-        });
-    };
-
-    return (
-        <div className={styles.card}>
-            <div className={styles.cardHeader}>
-                <div className={styles.petName}>{pet.name}</div>
-                <div className={styles.actions}>
-                    <button
-                        className={`${styles.button} ${styles.buttonPrimary}`}
-                        onClick={handleSave}
-                        disabled={!editable || saving}
-                        title={editable ? 'Save changes' : 'You can only edit pets you own'}
-                    >
-                        {saving ? 'Saving…' : 'Save'}
-                    </button>
                     {isPetOwner && (
                         <button
-                            className={`${styles.button} ${styles.buttonDanger}`}
-                            onClick={onDelete}
-                            disabled={!editable || deleting}
-                            title={editable ? 'Remove pet' : 'You can only remove pets you own'}
+                            className={`${styles.button} ${styles.buttonPrimary}`}
+                            onClick={openAddModal}
+                            disabled={savingId === '__new__'}
+                            title="Add a new pet"
                         >
-                            {deleting ? 'Removing…' : 'Remove'}
+                            Add Pet
                         </button>
                     )}
                 </div>
             </div>
 
-            <div className={styles.form}>
-                <div className={styles.field}>
-                    <label className={styles.label}>Name</label>
-                    <input
-                        className={styles.input}
-                        value={draft.name}
-                        onChange={(e) => setDraft((p) => ({ ...p, name: e.target.value }))}
-                        disabled={!editable || saving}
-                    />
-                </div>
+            {error && <div className={styles.error}>{error}</div>}
 
-                <div className={styles.field}>
-                    <label className={styles.label}>Date of birth</label>
-                    <input
-                        type="date"
-                        className={styles.input}
-                        value={draft.date_of_birth}
-                        onChange={(e) => setDraft((p) => ({ ...p, date_of_birth: e.target.value }))}
-                        disabled={!editable || saving}
-                    />
-                </div>
+            {/* TABLE VIEW FOR ALL ROLES */}
+            <div className={styles.tableWrap}>
+                <table className={styles.table}>
+                    <thead>
+                        <tr>
+                            <th className={styles.th}>Name</th>
+                            <th className={styles.th}>Breed</th>
+                            <th className={styles.th}>DOB</th>
+                            <th className={styles.th}>Weight</th>
+                            <th className={styles.th}>Next Vaccination</th>
+                            <th className={styles.th}>Notes</th>
+                            <th className={styles.th} style={{ width: isPetOwner ? 200 : 120 }}>
+                                Actions
+                            </th>
+                        </tr>
+                    </thead>
 
-                <div className={styles.field}>
-                    <label className={styles.label}>Breed</label>
-                    <input
-                        className={styles.input}
-                        value={draft.breed}
-                        onChange={(e) => setDraft((p) => ({ ...p, breed: e.target.value }))}
-                        disabled={!editable || saving}
-                    />
-                </div>
+                    <tbody>
+                        {pets.map((pet) => {
+                            const editable = canEditPet(pet);
+                            return (
+                                <tr key={pet.id} className={styles.tr}>
+                                    <td className={styles.td}>{pet.name || '-'}</td>
+                                    <td className={styles.td}>{pet.breed || '-'}</td>
+                                    <td className={styles.td}>{toDateInputValue(pet.date_of_birth) || '-'}</td>
+                                    <td className={styles.td}>
+                                        {pet.weight_kg === null || pet.weight_kg === undefined ? '-' : `${pet.weight_kg} kg`}
+                                    </td>
+                                    <td className={styles.td}>{toDateInputValue(pet.next_vaccination_date) || '-'}</td>
+                                    <td className={styles.td}>
+                                        {pet.notes ? (
+                                            <span className={styles.notes} title={pet.notes}>
+                                                {pet.notes}
+                                            </span>
+                                        ) : (
+                                            '-'
+                                        )}
+                                    </td>
 
-                <div className={styles.field}>
-                    <label className={styles.label}>Weight (kg)</label>
-                    <input
-                        inputMode="decimal"
-                        className={styles.input}
-                        value={draft.weight_kg}
-                        onChange={(e) => setDraft((p) => ({ ...p, weight_kg: e.target.value }))}
-                        disabled={!editable || saving}
-                    />
-                </div>
+                                    <td className={styles.td}>
+                                        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                                            <button
+                                                className={`${styles.button} ${styles.buttonPrimary}`}
+                                                onClick={() => setEditingPet(pet)}
+                                                disabled={!editable || savingId === pet.id}
+                                                title={editable ? 'Edit pet' : 'You can only edit pets you own'}
+                                            >
+                                                Edit
+                                            </button>
 
-                <div className={styles.field}>
-                    <label className={styles.label}>Next vaccination date</label>
-                    <input
-                        type="date"
-                        className={styles.input}
-                        value={draft.next_vaccination_date}
-                        onChange={(e) => setDraft((p) => ({ ...p, next_vaccination_date: e.target.value }))}
-                        disabled={!editable || saving}
-                    />
-                </div>
+                                            {isPetOwner && (
+                                                <button
+                                                    className={`${styles.button} ${styles.buttonDanger}`}
+                                                    onClick={() => deletePet(pet.id)}
+                                                    disabled={!editable || deletingId === pet.id}
+                                                    title={editable ? 'Remove pet' : 'You can only remove pets you own'}
+                                                >
+                                                    {deletingId === pet.id ? 'Removing…' : 'Remove'}
+                                                </button>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            );
+                        })}
 
-                <div className={styles.field} style={{ gridColumn: '1 / -1' }}>
-                    <label className={styles.label}>Notes</label>
-                    <textarea
-                        className={styles.textarea}
-                        value={draft.notes}
-                        onChange={(e) => setDraft((p) => ({ ...p, notes: e.target.value }))}
-                        disabled={!editable || saving}
-                    />
-                </div>
+                        {!loading && pets.length === 0 && (
+                            <tr>
+                                <td className={styles.td} colSpan={7}>
+                                    {isPetOwner ? 'No pets yet. Click “Add Pet” to create your first one.' : 'No pets found.'}
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
             </div>
+
+            {/* Add Pet Modal (pet owner) */}
+            {addOpen && isPetOwner && (
+                <div className={styles.modalOverlay} onClick={closeAddModal}>
+                    <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+                        <div className={styles.modalHeader}>
+                            <div className={styles.modalTitle}>Add New Pet</div>
+                            <button className={styles.modalClose} onClick={closeAddModal}>
+                                ✕
+                            </button>
+                        </div>
+
+                        <div className={styles.modalBody}>
+                            <div className={styles.form}>
+                                <div className={styles.field}>
+                                    <label className={styles.label}>Name *</label>
+                                    <input
+                                        className={styles.input}
+                                        value={newPet.name}
+                                        onChange={(e) => setNewPet((p) => ({ ...p, name: e.target.value }))}
+                                        disabled={savingId === '__new__'}
+                                        placeholder="e.g. Mochi"
+                                    />
+                                </div>
+
+                                <div className={styles.field}>
+                                    <label className={styles.label}>Date of birth</label>
+                                    <input
+                                        type="date"
+                                        className={styles.input}
+                                        value={newPet.date_of_birth}
+                                        onChange={(e) => setNewPet((p) => ({ ...p, date_of_birth: e.target.value }))}
+                                        disabled={savingId === '__new__'}
+                                    />
+                                </div>
+
+                                <div className={styles.field}>
+                                    <label className={styles.label}>Breed</label>
+                                    <input
+                                        className={styles.input}
+                                        value={newPet.breed}
+                                        onChange={(e) => setNewPet((p) => ({ ...p, breed: e.target.value }))}
+                                        disabled={savingId === '__new__'}
+                                        placeholder="e.g. Golden Retriever"
+                                    />
+                                </div>
+
+                                <div className={styles.field}>
+                                    <label className={styles.label}>Weight (kg)</label>
+                                    <input
+                                        inputMode="decimal"
+                                        className={styles.input}
+                                        value={newPet.weight_kg}
+                                        onChange={(e) => setNewPet((p) => ({ ...p, weight_kg: e.target.value }))}
+                                        disabled={savingId === '__new__'}
+                                        placeholder="e.g. 12.5"
+                                    />
+                                </div>
+
+                                <div className={styles.field}>
+                                    <label className={styles.label}>Next vaccination date</label>
+                                    <input
+                                        type="date"
+                                        className={styles.input}
+                                        value={newPet.next_vaccination_date}
+                                        onChange={(e) => setNewPet((p) => ({ ...p, next_vaccination_date: e.target.value }))}
+                                        disabled={savingId === '__new__'}
+                                    />
+                                </div>
+
+                                <div className={styles.field} style={{ gridColumn: '1 / -1' }}>
+                                    <label className={styles.label}>Notes</label>
+                                    <textarea
+                                        className={styles.textarea}
+                                        value={newPet.notes}
+                                        onChange={(e) => setNewPet((p) => ({ ...p, notes: e.target.value }))}
+                                        disabled={savingId === '__new__'}
+                                        placeholder="Additional notes…"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className={styles.modalFooter}>
+                            <button className={styles.button} onClick={closeAddModal} disabled={savingId === '__new__'}>
+                                Cancel
+                            </button>
+                            <button
+                                className={`${styles.button} ${styles.buttonPrimary}`}
+                                onClick={handleCreatePet}
+                                disabled={savingId === '__new__'}
+                            >
+                                {savingId === '__new__' ? 'Adding…' : 'Add Pet'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Pet Modal (all roles) */}
+            {editingPet && (
+                <div className={styles.modalOverlay} onClick={() => setEditingPet(null)}>
+                    <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+                        <div className={styles.modalHeader}>
+                            <div className={styles.modalTitle}>Edit Pet</div>
+                            <button className={styles.modalClose} onClick={() => setEditingPet(null)}>
+                                ✕
+                            </button>
+                        </div>
+
+                        <div className={styles.modalBody}>
+                            <div className={styles.form}>
+                                <div className={styles.field}>
+                                    <label className={styles.label}>Name *</label>
+                                    <input
+                                        className={styles.input}
+                                        value={editDraft.name}
+                                        onChange={(e) => setEditDraft((p) => ({ ...p, name: e.target.value }))}
+                                        disabled={savingId === editingPet.id}
+                                    />
+                                </div>
+
+                                <div className={styles.field}>
+                                    <label className={styles.label}>Date of birth</label>
+                                    <input
+                                        type="date"
+                                        className={styles.input}
+                                        value={editDraft.date_of_birth}
+                                        onChange={(e) => setEditDraft((p) => ({ ...p, date_of_birth: e.target.value }))}
+                                        disabled={savingId === editingPet.id}
+                                    />
+                                </div>
+
+                                <div className={styles.field}>
+                                    <label className={styles.label}>Breed</label>
+                                    <input
+                                        className={styles.input}
+                                        value={editDraft.breed}
+                                        onChange={(e) => setEditDraft((p) => ({ ...p, breed: e.target.value }))}
+                                        disabled={savingId === editingPet.id}
+                                    />
+                                </div>
+
+                                <div className={styles.field}>
+                                    <label className={styles.label}>Weight (kg)</label>
+                                    <input
+                                        inputMode="decimal"
+                                        className={styles.input}
+                                        value={editDraft.weight_kg}
+                                        onChange={(e) => setEditDraft((p) => ({ ...p, weight_kg: e.target.value }))}
+                                        disabled={savingId === editingPet.id}
+                                    />
+                                </div>
+
+                                <div className={styles.field}>
+                                    <label className={styles.label}>Next vaccination date</label>
+                                    <input
+                                        type="date"
+                                        className={styles.input}
+                                        value={editDraft.next_vaccination_date}
+                                        onChange={(e) => setEditDraft((p) => ({ ...p, next_vaccination_date: e.target.value }))}
+                                        disabled={savingId === editingPet.id}
+                                    />
+                                </div>
+
+                                <div className={styles.field} style={{ gridColumn: '1 / -1' }}>
+                                    <label className={styles.label}>Notes</label>
+                                    <textarea
+                                        className={styles.textarea}
+                                        value={editDraft.notes}
+                                        onChange={(e) => setEditDraft((p) => ({ ...p, notes: e.target.value }))}
+                                        disabled={savingId === editingPet.id}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className={styles.modalFooter}>
+                            <button className={styles.button} onClick={() => setEditingPet(null)}>
+                                Cancel
+                            </button>
+                            <button
+                                className={`${styles.button} ${styles.buttonPrimary}`}
+                                onClick={handleSaveEdit}
+                                disabled={savingId === editingPet.id}
+                            >
+                                {savingId === editingPet.id ? 'Saving…' : 'Save changes'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -7,9 +7,16 @@ import styles from './AuthForms.module.css';
 interface LoginFormProps {
     onSwitchToRegister: () => void;
     onSuccess?: () => void;
+    onBack?: () => void;
+    backLabel?: string;
 }
 
-export default function LoginForm({ onSwitchToRegister, onSuccess }: LoginFormProps) {
+export default function LoginForm({
+    onSwitchToRegister,
+    onSuccess,
+    onBack,
+    backLabel = 'Quay lại trang chủ',
+}: LoginFormProps) {
     const { login, loading, error, clearError } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -76,6 +83,12 @@ export default function LoginForm({ onSwitchToRegister, onSuccess }: LoginFormPr
                 <button type="submit" className={styles.submitButton} disabled={loading}>
                     {loading ? 'Signing in...' : 'Sign In'}
                 </button>
+                {onBack && (
+                    <button type="button" onClick={onBack} className={styles.backLink}>
+                        <span aria-hidden>←</span>
+                        {backLabel}
+                    </button>
+                )}
             </form>
 
             <p className={styles.switchText}>

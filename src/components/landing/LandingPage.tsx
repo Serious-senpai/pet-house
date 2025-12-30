@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import AuthModal from '../auth/AuthModal';
 import PetsPanel from '@/components/pets/PetsPanel';
 import styles from './LandingPage.module.css';
 
@@ -63,19 +64,11 @@ const userTypes = [
 ];
 
 export default function LandingPage() {
+    const router = useRouter();
     const { user, loading, logout } = useAuth();
-    const [authModalOpen, setAuthModalOpen] = useState(false);
-    const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
-    const openLogin = () => {
-        setAuthMode('login');
-        setAuthModalOpen(true);
-    };
-
-    const openRegister = () => {
-        setAuthMode('register');
-        setAuthModalOpen(true);
-    };
+    const openLogin = () => router.push('/auth/login');
+    const openRegister = () => router.push('/auth/register');
 
     const getRoleDisplayName = (role: string) => {
         const roleNames: Record<string, string> = {
@@ -105,6 +98,9 @@ export default function LandingPage() {
                                     <span className={styles.userName}>{user.full_name}</span>
                                     <span className={styles.userRole}>{getRoleDisplayName(user.role)}</span>
                                 </div>
+                                <Link href="/appointments" className={styles.headerLinkButton}>
+                                    Appointments
+                                </Link>
                                 <button onClick={logout} className={styles.logoutButton}>
                                     Logout
                                 </button>
@@ -145,14 +141,12 @@ export default function LandingPage() {
                         </div>
                     )}
                     {user && (
-                        <>
-                            <div className={styles.welcomeCard}>
-                                <h3>Welcome back, {user.full_name}! 👋</h3>
-                                <p>You are logged in as {getRoleDisplayName(user.role)}.</p>
-                            </div>
-                            <PetsPanel />
-                        </>
+                        <div className={styles.welcomeCard}>
+                            <h3>Welcome back, {user.full_name}! 👋</h3>
+                            <p>You are logged in as {getRoleDisplayName(user.role)}.</p>
+                        </div>
                     )}
+
                 </div>
                 <div className={styles.heroImage}>
                     <div className={styles.heroImagePlaceholder}>
@@ -162,6 +156,15 @@ export default function LandingPage() {
                     </div>
                 </div>
             </section>
+
+            {user && (
+                <section className={styles.dashboardSection}>
+                    <div className={styles.dashboardContainer}>
+                        <PetsPanel />
+                    </div>
+                </section>
+            )}
+
 
             {/* Features Section */}
             <section className={styles.features}>
@@ -228,13 +231,6 @@ export default function LandingPage() {
                     </p>
                 </div>
             </footer>
-
-            {/* Auth Modal */}
-            <AuthModal
-                isOpen={authModalOpen}
-                onClose={() => setAuthModalOpen(false)}
-                initialMode={authMode}
-            />
         </div>
     );
 }

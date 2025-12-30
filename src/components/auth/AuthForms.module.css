@@ -183,5 +183,26 @@
         background: #450a0a;
         border-color: #7f1d1d;
         color: #fca5a5;
-    }
+    } 
+}
+
+.backLink {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  background: transparent;
+  border: none;
+  padding: 0;
+
+  color: #2563eb;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.backLink:hover {
+  text-decoration: underline;
 }
