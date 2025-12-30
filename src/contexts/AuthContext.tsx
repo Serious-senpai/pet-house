@@ -39,44 +39,70 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return data as UserProfile;
     }, []);
 
-    const handleAuthChange = useCallback(async (authUser: User | null) => {
-        if (authUser) {
-            const profile = await fetchUserProfile(authUser.id);
-            setUser(profile);
-        } else {
-            setUser(null);
-        }
-        setLoading(false);
-    }, [fetchUserProfile]);
+    const handleAuthChange = useCallback(
+        async (authUser: User | null) => {
+            if (authUser) {
+                const profile = await fetchUserProfile(authUser.id);
+                setUser(profile);
+            } else {
+                setUser(null);
+            }
+        },
+        [fetchUserProfile]
+    );
 
     useEffect(() => {
-        // Get initial session
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session);
-            handleAuthChange(session?.user ?? null);
+        let alive = true;
+
+        const init = async () => {
+            setLoading(true);
+            try {
+                const { data, error } = await supabase.auth.getSession();
+                if (error) throw error;
+
+                if (!alive) return;
+                setSession(data.session);
+                await handleAuthChange(data.session?.user ?? null);
+            } catch (e) {
+                console.error('[AuthProvider] init getSession failed:', e);
+                if (!alive) return;
+                setSession(null);
+                setUser(null);
+            } finally {
+                if (alive) setLoading(false);
+            }
+        };
+
+        init();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+            if (!alive) return;
+
+            setLoading(true);
+            try {
+                setSession(newSession);
+                await handleAuthChange(newSession?.user ?? null);
+            } catch (e) {
+                console.error('[AuthProvider] onAuthStateChange failed:', e);
+                if (!alive) return;
+                setSession(null);
+                setUser(null);
+            } finally {
+                if (alive) setLoading(false);
+            }
         });
 
-        // Listen for auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            async (_event, session) => {
-                setSession(session);
-                await handleAuthChange(session?.user ?? null);
-            }
-        );
-
         return () => {
+            alive = false;
             subscription.unsubscribe();
         };
     }, [handleAuthChange]);
 
-    const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    const login = async (email: string, password: string) => {
         setLoading(true);
         setError(null);
 
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-        });
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
         if (error) {
             setError(error.message);
@@ -93,22 +119,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { success: true };
     };
 
-    const register = async (
-        email: string,
-        password: string,
-        fullName: string,
-        role: UserRole
-    ): Promise<{ success: boolean; error?: string }> => {
+    const register = async (email: string, password: string, fullName: string, role: UserRole) => {
         setLoading(true);
         setError(null);
 
         const friendlyDuplicateEmail = 'This email is already registered. Please sign in instead.';
 
-        // Sign up the user
-        const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-        });
+        const { data, error } = await supabase.auth.signUp({ email, password });
 
         if (error) {
             const message = (error.message || '').toLowerCase();
@@ -120,8 +137,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return { success: false, error: friendly };
         }
 
-        // Supabase can return a "user" object even when the email is already registered
-        // (to avoid account enumeration). In that case `identities` is typically empty.
         if (data.user && (data.user.identities?.length ?? 0) === 0) {
             setError(friendlyDuplicateEmail);
             setLoading(false);
@@ -129,12 +144,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (data.user) {
-            // Create user profile
             const { error: profileError } = await supabase.from('profiles').insert({
                 id: data.user.id,
-                email: email,
+                email,
                 full_name: fullName,
-                role: role,
+                role,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
             });
@@ -144,9 +158,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 const code = (profileError as unknown as { code?: string }).code;
                 const isFkViolation = code === '23503' || message.includes('foreign key') || message.includes('profiles_id_fkey');
                 const isUniqueViolation = code === '23505' || message.includes('duplicate key');
-                const friendly = (isFkViolation || isUniqueViolation)
-                    ? friendlyDuplicateEmail
-                    : profileError.message;
+                const friendly = (isFkViolation || isUniqueViolation) ? friendlyDuplicateEmail : profileError.message;
 
                 setError(friendly);
                 setLoading(false);
@@ -162,39 +174,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     const logout = async () => {
-        // Optimistic UI update: ensure the app logs out immediately.
         setUser(null);
         setSession(null);
         setLoading(false);
 
-        // Best-effort remote sign-out; don't block UI on network.
         try {
             const { error } = await supabase.auth.signOut({ scope: 'local' });
-            if (error) {
-                console.error('Logout error:', error);
-            }
+            if (error) console.error('Logout error:', error);
         } catch (err) {
             console.error('Logout exception:', err);
         }
     };
 
-    const clearError = () => {
-        setError(null);
-    };
+    const clearError = () => setError(null);
 
     return (
-        <AuthContext.Provider
-            value={{
-                user,
-                session,
-                loading,
-                error,
-                login,
-                register,
-                logout,
-                clearError,
-            }}
-        >
+        <AuthContext.Provider value={{ user, session, loading, error, login, register, logout, clearError }}>
             {children}
         </AuthContext.Provider>
     );
@@ -202,8 +197,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth() {
     const context = useContext(AuthContext);
-    if (context === undefined) {
-        throw new Error('useAuth must be used within an AuthProvider');
-    }
+    if (context === undefined) throw new Error('useAuth must be used within an AuthProvider');
     return context;
 }
