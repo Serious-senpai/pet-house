@@ -65,7 +65,7 @@ const userTypes = [
 
 export default function LandingPage() {
     const router = useRouter();
-    const { user, loading, logout } = useAuth();
+    const { user } = useAuth();
 
     const openLogin = () => router.push('/auth/login');
     const openRegister = () => router.push('/auth/register');
@@ -82,42 +82,7 @@ export default function LandingPage() {
 
     return (
         <div className={styles.container}>
-            {/* Header */}
-            <header className={styles.header}>
-                <div className={styles.headerContent}>
-                    <div className={styles.logo}>
-                        <span className={styles.logoIcon}>🏠</span>
-                        <span className={styles.logoText}>PetHouse</span>
-                    </div>
-                    <nav className={styles.nav}>
-                        {loading ? (
-                            <div className={styles.loadingSpinner}></div>
-                        ) : user ? (
-                            <div className={styles.userSection}>
-                                <div className={styles.userInfo}>
-                                    <span className={styles.userName}>{user.full_name}</span>
-                                    <span className={styles.userRole}>{getRoleDisplayName(user.role)}</span>
-                                </div>
-                                <Link href="/appointments" className={styles.headerLinkButton}>
-                                    Appointments
-                                </Link>
-                                <button onClick={logout} className={styles.logoutButton}>
-                                    Logout
-                                </button>
-                            </div>
-                        ) : (
-                            <div className={styles.authButtons}>
-                                <button onClick={openLogin} className={styles.loginButton}>
-                                    Sign In
-                                </button>
-                                <button onClick={openRegister} className={styles.registerButton}>
-                                    Get Started
-                                </button>
-                            </div>
-                        )}
-                    </nav>
-                </div>
-            </header>
+
 
             {/* Hero Section */}
             <section className={styles.hero}>

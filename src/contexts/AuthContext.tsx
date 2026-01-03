@@ -1,6 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation'; // 1. Import useRouter
 import { supabase } from '@/lib/supabaseClient';
 import { UserProfile, UserRole } from '@/types';
 import { User, Session } from '@supabase/supabase-js';
@@ -19,10 +20,17 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+    const router = useRouter(); // 2. Khởi tạo router
     const [user, setUser] = useState<UserProfile | null>(null);
     const [session, setSession] = useState<Session | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    const currentUserIdRef = useRef<string | undefined>(undefined);
+
+    useEffect(() => {
+        currentUserIdRef.current = user?.id;
+    }, [user]);
 
     const fetchUserProfile = useCallback(async (userId: string): Promise<UserProfile | null> => {
         const { data, error } = await supabase
@@ -75,8 +83,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         init();
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
             if (!alive) return;
+
+            const newUserId = newSession?.user?.id;
+            const isSameUser = newUserId === currentUserIdRef.current;
+
+            if (isSameUser) {
+                setSession(newSession);
+                return;
+            }
 
             setLoading(true);
             try {
@@ -174,9 +190,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     const logout = async () => {
+        // Xóa state trước để UI phản hồi ngay lập tức
         setUser(null);
         setSession(null);
-        setLoading(false);
+
+        // 3. Điều hướng về trang chủ ngay lập tức
+        router.push('/');
+        router.refresh(); // Tùy chọn: Refresh để đảm bảo cache của router được làm mới
 
         try {
             const { error } = await supabase.auth.signOut({ scope: 'local' });

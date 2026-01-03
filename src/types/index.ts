@@ -29,3 +29,54 @@ export interface Pet {
     created_at: string;
     updated_at: string;
 }
+export type RoomType = 'standard' | 'premium' | 'deluxe';
+export type BoardingStatus = 'pending' | 'confirmed' | 'checked_in' | 'completed' | 'cancelled';
+export type HealthStatus = 'normal' | 'mild_issue' | 'serious_issue';
+
+export interface BoardingRoom {
+    id: string;
+    name: string;
+    description: string | null;
+    room_type: RoomType;
+    capacity: number;
+    available_count: number;
+    price_per_day: number;
+    is_available: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface BoardingBooking {
+    id: string;
+    owner_id: string;
+    pet_id: string;
+    room_id: string;
+    check_in_date: string;
+    check_out_date: string;
+    price_per_day: number;
+    total_price: number;
+    special_notes: string | null;
+    dietary_requirements: string | null;
+    medical_requirements: string | null;
+    status: BoardingStatus;
+    staff_checked_in_by: string | null;
+    staff_checked_out_by: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface BoardingHealthLog {
+    id: string;
+    booking_id: string;
+    logged_by_staff_id: string;
+    log_date: string;
+    health_status: HealthStatus | null;
+    behavior_notes: string | null;
+    food_intake: string | null;
+    water_intake: string | null;
+    activities: string | null;
+    medication_given: string | null;
+    notes: string | null;
+    created_at: string;
+    updated_at: string;
+}

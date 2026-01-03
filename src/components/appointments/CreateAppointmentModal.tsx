@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
 import styles from './CreateAppointmentModal.module.css';
@@ -35,6 +35,7 @@ export default function CreateAppointmentModal({
     const [pets, setPets] = useState<PetOption[]>([]);
     const [vets, setVets] = useState<VetOption[]>([]);
     const [loadingOptions, setLoadingOptions] = useState(false);
+    const loadedRef = useRef(false);
 
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -72,7 +73,10 @@ export default function CreateAppointmentModal({
     }, [isOpen]);
 
     useEffect(() => {
-        if (!isOpen) return;
+        if (!isOpen) {
+            loadedRef.current = false;
+            return;
+        }
         if (!user) return;
 
         const load = async () => {
@@ -108,11 +112,14 @@ export default function CreateAppointmentModal({
                 setError(e?.message || 'Failed to load options.');
             } finally {
                 setLoadingOptions(false);
+                loadedRef.current = true;
             }
         };
 
-        void load();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // Only load once per modal open
+        if (!loadedRef.current) {
+            void load();
+        }
     }, [isOpen, user?.id]);
 
     if (!isOpen) return null;
@@ -120,6 +127,7 @@ export default function CreateAppointmentModal({
     const resetAndClose = () => {
         setError(null);
         setSaving(false);
+        loadedRef.current = false;
         onClose();
     };
 

@@ -1,33 +1,25 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { AuthProvider } from "@/contexts/AuthContext";
-import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-export const metadata: Metadata = {
-  title: "PetHouse - Pet Care Management",
-  description: "Complete care for your beloved pets. Manage appointments, medical records, and more.",
-};
+// app/layout.tsx
+import { AuthProvider } from '@/contexts/AuthContext';
+import Header from '@/components/layout/Header'; // Import Header mới tạo
+import './globals.css';
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: React.ReactNode
+}) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body>
         <AuthProvider>
-          {children}
+          {/* Header nằm ở đây, nó sẽ xuất hiện ở mọi trang */}
+          <Header />
+
+          {/* Nội dung của từng trang sẽ nằm ở dưới header */}
+          <main>
+            {children}
+          </main>
+
         </AuthProvider>
       </body>
     </html>

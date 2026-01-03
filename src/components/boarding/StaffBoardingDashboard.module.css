@@ -1,0 +1,374 @@
+.container {
+    min-height: 100vh;
+    background: #f5f7fa;
+    padding: 2rem 1rem;
+}
+
+.header {
+    max-width: 1200px;
+    margin: 0 auto 2rem;
+}
+
+.title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 0.5rem;
+}
+
+.subtitle {
+    color: #666;
+    font-size: 0.95rem;
+}
+
+.banner {
+    max-width: 1200px;
+    margin: 0 auto 2rem;
+    padding: 1rem;
+    background: #fee;
+    border: 1px solid #fcc;
+    color: #c33;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.error {
+    padding: 1rem;
+    background: #fee;
+    border: 1px solid #fcc;
+    color: #c33;
+    border-radius: 8px;
+    font-weight: 500;
+    text-align: center;
+}
+
+/* Tabs */
+.tabs {
+    max-width: 1200px;
+    margin: 0 auto 2rem;
+    display: flex;
+    gap: 1rem;
+    border-bottom: 1px solid #ddd;
+}
+
+.tab {
+    padding: 1rem 1.5rem;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-weight: 600;
+    color: #666;
+    transition: all 0.2s ease;
+    font-size: 0.95rem;
+}
+
+.tab:hover {
+    color: #1a1a2e;
+}
+
+.tabActive {
+    color: #6366f1;
+    border-bottom-color: #6366f1;
+}
+
+.loading,
+.empty {
+    max-width: 1200px;
+    margin: 2rem auto;
+    text-align: center;
+    padding: 2rem;
+    color: #666;
+    font-size: 0.95rem;
+}
+
+/* Bookings List */
+.bookingsList {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+.bookingCard {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.bookingCard:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.bookingHeader {
+    padding: 1.5rem;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.petName {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0 0 0.25rem 0;
+}
+
+.ownerName {
+    font-size: 0.85rem;
+    color: #666;
+    margin: 0;
+}
+
+.dates {
+    text-align: right;
+    color: #999;
+}
+
+.dates small {
+    font-size: 0.8rem;
+}
+
+.bookingBody {
+    flex: 1;
+    padding: 1.5rem;
+}
+
+.info {
+    margin-bottom: 0.75rem;
+}
+
+.info span {
+    display: block;
+    font-size: 0.8rem;
+    color: #999;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+}
+
+.info strong {
+    display: block;
+    color: #1a1a2e;
+    font-size: 0.95rem;
+}
+
+.info p {
+    margin: 0;
+    color: #555;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.actions {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #eee;
+    display: flex;
+    gap: 0.75rem;
+}
+
+.btnPrimary,
+.btnSecondary {
+    flex: 1;
+    padding: 0.65rem 1rem;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btnPrimary {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+}
+
+.btnPrimary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.btnSecondary {
+    background: #f0f4ff;
+    color: #6366f1;
+    border: 1px solid #cce7ff;
+}
+
+.btnSecondary:hover {
+    background: #e8ebff;
+    border-color: #8b5cf6;
+    color: #8b5cf6;
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+}
+
+.modalContent {
+    background: white;
+    border-radius: 12px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15);
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.modalHeader h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: #1a1a2e;
+}
+
+.closeBtn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #999;
+}
+
+.logsHistory {
+    padding: 1.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.logsHistory h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+    color: #1a1a2e;
+}
+
+.logEntry {
+    padding: 1rem;
+    background: #fafafa;
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    border-left: 4px solid #6366f1;
+}
+
+.logDate {
+    font-size: 0.8rem;
+    color: #999;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.logStatus {
+    font-size: 0.9rem;
+    margin-bottom: 0.75rem;
+}
+
+.logStatus strong {
+    color: #6366f1;
+}
+
+.logEntry p {
+    margin: 0.5rem 0;
+    font-size: 0.85rem;
+    color: #555;
+}
+
+.notes {
+    font-style: italic;
+    color: #666;
+}
+
+.logForm {
+    padding: 1.5rem;
+}
+
+.logForm h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+    color: #1a1a2e;
+}
+
+.field {
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.field label {
+    font-weight: 600;
+    color: #1a1a2e;
+    margin-bottom: 0.4rem;
+    font-size: 0.9rem;
+}
+
+.field input,
+.field select,
+.field textarea {
+    padding: 0.6rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-family: inherit;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.field textarea {
+    min-height: 70px;
+    resize: vertical;
+}
+
+.grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+    .bookingsList {
+        grid-template-columns: 1fr;
+    }
+
+    .tabs {
+        flex-wrap: wrap;
+    }
+
+    .actions {
+        flex-direction: column;
+    }
+
+    .grid2 {
+        grid-template-columns: 1fr;
+    }
+}

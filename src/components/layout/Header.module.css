@@ -1,0 +1,54 @@
+.header {
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    position: sticky; /* Giữ header luôn ở trên cùng khi cuộn */
+    top: 0;
+    z-index: 1000;
+    width: 100%;
+}
+
+.headerContent {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Thêm class này để link logo không bị gạch chân */
+.logoLink {
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #2563eb;
+}
+
+.nav {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* ... Copy các class còn lại liên quan đến button, userSection từ LandingPage cũ sang đây ... */
+.authButtons { display: flex; gap: 1rem; }
+.loginButton { padding: 0.5rem 1rem; border: 1px solid #2563eb; color: #2563eb; background: none; border-radius: 4px; cursor: pointer; }
+.registerButton { padding: 0.5rem 1rem; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; }
+.userSection { display: flex; align-items: center; gap: 1rem; }
+.userInfo { display: flex; flex-direction: column; align-items: flex-end; font-size: 0.875rem; }
+.userName { font-weight: 600; color: #1f2937; }
+.userRole { color: #6b7280; font-size: 0.75rem; }
+.headerLinkButton { text-decoration: none; color: #4b5563; padding: 0.5rem; border-radius: 4px; transition: background 0.2s; }
+.headerLinkButton:hover { background-color: #f3f4f6; color: #2563eb; }
+.logoutButton { padding: 0.5rem 1rem; border: 1px solid #ef4444; color: #ef4444; background: none; border-radius: 4px; cursor: pointer; font-size: 0.875rem; }
+.logoutButton:hover { background-color: #fef2f2; }
+.loadingSpinner { width: 20px; height: 20px; border: 2px solid #f3f3f3; border-top: 2px solid #2563eb; border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
