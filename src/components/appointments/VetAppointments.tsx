@@ -3,8 +3,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
+import MedicalRecordModal from './MedicalRecordModal';
 import styles from './VetAppointments.module.css';
 
+// --- Types ---
 type TabKey = 'upcoming' | 'past' | 'cancelled';
 type ViewMode = 'list' | 'calendar';
 
@@ -18,10 +20,10 @@ type AppointmentRow = {
     service_type: string | null;
     owner_note: string | null;
     created_at?: string | null;
-
-    vet: { id: string; full_name: string | null } | null;
+    vet_id: string | null;
     pet: { id: string; name: string | null } | null;
     owner: { id: string; full_name: string | null; email: string | null; phone: string | null } | null;
+    vet: { id: string; full_name: string | null } | null;
 };
 
 type AppointmentRowRaw = Omit<AppointmentRow, 'pet' | 'owner' | 'vet'> & {
@@ -30,66 +32,44 @@ type AppointmentRowRaw = Omit<AppointmentRow, 'pet' | 'owner' | 'vet'> & {
     vet: SupabaseJoinOne<{ id: string; full_name: string | null }>;
 };
 
+// --- Helpers ---
 function firstOrNull<T>(value: SupabaseJoinOne<T>): T | null {
     if (!value) return null;
     return Array.isArray(value) ? value[0] ?? null : value;
 }
 
 function fmtDateTime(iso: string) {
-    const d = new Date(iso);
-    return new Intl.DateTimeFormat(undefined, {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-    }).format(d);
+    return new Intl.DateTimeFormat('vi-VN', {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit',
+    }).format(new Date(iso));
 }
 
 function ymdLocal(iso: string) {
     const d = new Date(iso);
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 function statusLabel(status: string | null) {
-    switch (status) {
-        case 'pending':
-            return 'Pending';
-        case 'confirmed':
-            return 'Confirmed';
-        case 'completed':
-            return 'Completed';
-        case 'cancelled':
-            return 'Cancelled';
-        case 'rejected':
-            return 'Rejected';
-        default:
-            return status || '-';
-    }
+    const labels: Record<string, string> = {
+        pending: 'Chờ xác nhận',
+        confirmed: 'Đã xác nhận',
+        completed: 'Hoàn thành',
+        cancelled: 'Đã hủy',
+        rejected: 'Từ chối'
+    };
+    return status ? labels[status] || status : '-';
 }
 
 function statusClass(status: string | null, stylesObj: any) {
     switch (status) {
-        case 'pending':
-            return stylesObj.badgePending;
-        case 'confirmed':
-            return stylesObj.badgeConfirmed;
-        case 'completed':
-            return stylesObj.badgeCompleted;
+        case 'pending': return stylesObj.badgePending;
+        case 'confirmed': return stylesObj.badgeConfirmed;
+        case 'completed': return stylesObj.badgeCompleted;
         case 'cancelled':
-        case 'rejected':
-            return stylesObj.badgeCancelled;
-        default:
-            return stylesObj.badgeDefault;
+        case 'rejected': return stylesObj.badgeCancelled;
+        default: return stylesObj.badgeDefault;
     }
-}
-
-function startOfMonth(d: Date) {
-    return new Date(d.getFullYear(), d.getMonth(), 1);
-}
-function endOfMonth(d: Date) {
-    return new Date(d.getFullYear(), d.getMonth() + 1, 0);
 }
 
 export default function VetAppointments() {
@@ -97,213 +77,149 @@ export default function VetAppointments() {
 
     const [tab, setTab] = useState<TabKey>('upcoming');
     const [viewMode, setViewMode] = useState<ViewMode>('list');
-
     const [rows, setRows] = useState<AppointmentRow[]>([]);
     const [loading, setLoading] = useState(false);
     const [actionId, setActionId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    // calendar state
-    const [monthCursor, setMonthCursor] = useState<Date>(() => new Date());
-    const [selectedDay, setSelectedDay] = useState<string>(''); // YYYY-MM-DD
+    const [recordModalOpen, setRecordModalOpen] = useState(false);
+    const [selectedAppointmentForRecord, setSelectedAppointmentForRecord] = useState<AppointmentRow | null>(null);
+
+    const [monthCursor, setMonthCursor] = useState<Date>(new Date());
+    const [selectedDay, setSelectedDay] = useState<string>('');
 
     const fetchAppointments = async () => {
-        if (!user) return;
-        if (user.role !== 'vet') return;
-
+        if (!user || user.role !== 'vet') return;
         setLoading(true);
         setError(null);
 
-        const base = supabase
-            .from('appointments')
-            .select(
-                `
-        id,
-        start_time,
-        end_time,
-        status,
-        service_type,
-        owner_note,
-        created_at,
-        pet:pets!appointments_pet_id_fkey(id,name),
-        owner:profiles!appointments_owner_id_fkey(id,full_name,email,phone),
-        vet:profiles!appointments_vet_id_fkey(id,full_name)
-        `
-            );
+        try {
+            const base = supabase
+                .from('appointments')
+                .select(`
+                    id, start_time, end_time, status, service_type, owner_note, created_at, vet_id,
+                    pet:pets!appointments_pet_id_fkey(id, name),
+                    owner:profiles!appointments_owner_id_fkey(id, full_name, email, phone),
+                    vet:profiles!appointments_vet_id_fkey(id, full_name)
+                `);
 
-        const nowIso = new Date().toISOString();
-        let query = base;
+            const nowIso = new Date().toISOString();
+            let query = base;
 
-        // Tab filter
-        if (tab === 'upcoming') {
-            // upcoming for vet: (assigned to me) OR (pending + unassigned)
-            query = query
-                .in('status', ['pending', 'confirmed'])
-                .gte('start_time', nowIso)
-                .or(`vet_id.eq.${user.id},and(vet_id.is.null,status.eq.pending)`);
-        } else if (tab === 'past') {
-            // past for vet: assigned to me only (keep it strict)
-            query = query
-                .eq('vet_id', user.id)
-                .or(`start_time.lt.${nowIso},status.eq.completed`);
-        } else {
-            // cancelled/rejected for vet: assigned to me only
-            query = query.eq('vet_id', user.id).in('status', ['cancelled', 'rejected']);
-        }
+            if (tab === 'upcoming') {
+                query = query
+                    .in('status', ['pending', 'confirmed'])
+                    .gte('start_time', nowIso)
+                    .or(`vet_id.eq.${user.id},and(vet_id.is.null,status.eq.pending)`);
+            } else if (tab === 'past') {
+                query = query.eq('vet_id', user.id).or(`start_time.lt.${nowIso},status.eq.completed`);
+            } else {
+                query = query.eq('vet_id', user.id).in('status', ['cancelled', 'rejected']);
+            }
 
-        query = query.order('start_time', { ascending: tab !== 'past' });
+            const { data, error: fetchError } = await query.order('start_time', { ascending: tab !== 'past' });
+            if (fetchError) throw fetchError;
 
-        const { data, error } = await query;
-
-        if (error) {
-            setError(error.message);
-            setRows([]);
-            setLoading(false);
-            return;
-        }
-
-        const normalized: AppointmentRow[] =
-            ((data as AppointmentRowRaw[]) ?? []).map((r) => ({
+            const normalized = (data as AppointmentRowRaw[]).map(r => ({
                 ...r,
                 pet: firstOrNull(r.pet),
                 owner: firstOrNull(r.owner),
                 vet: firstOrNull(r.vet),
-            })) ?? [];
-
-        setRows(normalized);
-        setLoading(false);
+            }));
+            setRows(normalized);
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const acceptAppointment = async (appointmentId: string) => {
+    useEffect(() => {
+        fetchAppointments();
+    }, [user?.id, tab]);
+
+    const handleAccept = async (id: string) => {
         if (!user) return;
-        if (user.role !== 'vet') return;
-
-        setActionId(appointmentId);
-        setError(null);
-
+        setActionId(id);
         try {
-            const { data, error } = await supabase
+            const { data, error: updateError } = await supabase
                 .from('appointments')
-                .update({
-                    vet_id: user.id,
-                    status: 'confirmed', // you can keep 'pending' if you prefer
-                    updated_at: new Date().toISOString(),
-                })
-                .eq('id', appointmentId)
-                .is('vet_id', null) // prevent race: only accept if still unassigned
-                .select('id')
-                .maybeSingle();
+                .update({ vet_id: user.id, status: 'confirmed', updated_at: new Date().toISOString() })
+                .eq('id', id)
+                .is('vet_id', null)
+                .select().maybeSingle();
 
-            if (error) {
-                setError(error.message);
-                return;
-            }
-
-            if (!data) {
-                setError('This appointment was already accepted by another vet.');
-                return;
-            }
-
+            if (updateError) throw updateError;
+            if (!data) alert('Cuộc hẹn này đã được bác sĩ khác nhận.');
             await fetchAppointments();
+        } catch (err: any) {
+            alert(err.message);
         } finally {
             setActionId(null);
         }
     };
 
-    useEffect(() => {
-        if (!user) return;
-        void fetchAppointments();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user?.id, user?.role, tab]);
+    const handleOpenCompleteModal = (appointment: AppointmentRow) => {
+        setSelectedAppointmentForRecord(appointment);
+        setRecordModalOpen(true);
+    };
 
-    // build counts for calendar
+    // --- Calendar Calculations ---
     const countsByDay = useMemo(() => {
         const m = new Map<string, number>();
-        for (const a of rows) {
+        rows.forEach(a => {
             const key = ymdLocal(a.start_time);
             m.set(key, (m.get(key) ?? 0) + 1);
-        }
+        });
         return m;
     }, [rows]);
 
-    const monthLabel = useMemo(() => {
-        return new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'long' }).format(monthCursor);
-    }, [monthCursor]);
-
     const monthDaysGrid = useMemo(() => {
-        const start = startOfMonth(monthCursor);
-
-        // calendar starts on Monday (0..6), convert JS Sunday(0) -> 6
-        const jsDay = start.getDay(); // Sun=0..Sat=6
-        const mondayIndex = (jsDay + 6) % 7; // Mon=0..Sun=6
+        const start = new Date(monthCursor.getFullYear(), monthCursor.getMonth(), 1);
+        const dayIdx = (start.getDay() + 6) % 7; // Mon=0
         const gridStart = new Date(start);
-        gridStart.setDate(start.getDate() - mondayIndex);
+        gridStart.setDate(start.getDate() - dayIdx);
 
-        const days: Array<{ date: Date; ymd: string; inMonth: boolean }> = [];
-        for (let i = 0; i < 42; i++) {
+        return Array.from({ length: 42 }).map((_, i) => {
             const d = new Date(gridStart);
             d.setDate(gridStart.getDate() + i);
-            const ymd = ymdLocal(d.toISOString());
-            days.push({
+            return {
                 date: d,
-                ymd,
-                inMonth: d.getMonth() === monthCursor.getMonth(),
-            });
-        }
-        return days;
+                ymd: ymdLocal(d.toISOString()),
+                inMonth: d.getMonth() === monthCursor.getMonth()
+            };
+        });
     }, [monthCursor]);
 
-    const dayList = useMemo(() => {
-        if (!selectedDay) return [];
-        return rows.filter((r) => ymdLocal(r.start_time) === selectedDay);
-    }, [rows, selectedDay]);
+    const dayList = useMemo(() => rows.filter(r => ymdLocal(r.start_time) === selectedDay), [rows, selectedDay]);
 
-    if (!user) return null;
-    if (user.role !== 'vet') return null;
+    if (!user || user.role !== 'vet') return null;
 
     return (
         <div className={styles.page}>
             <div className={styles.card}>
+                {/* Header Section */}
                 <div className={styles.header}>
                     <div>
-                        <div className={styles.title}>Vet Appointments</div>
-                        <div className={styles.subtitle}>See your schedule and manage upcoming visits.</div>
+                        <div className={styles.title}>Lịch Hẹn Bác Sĩ</div>
+                        <div className={styles.subtitle}>Quản lý danh sách và lịch trình khám bệnh.</div>
                     </div>
-
                     <div className={styles.headerRight}>
-                        <div className={styles.count}>{loading ? 'Loading…' : `${rows.length} shown`}</div>
-
-                        <button className={styles.button} onClick={fetchAppointments} disabled={loading}>
-                            Refresh
-                        </button>
-
+                        <button className={styles.button} onClick={fetchAppointments} disabled={loading}>Làm mới</button>
                         <div className={styles.viewToggle}>
-                            <button
-                                className={`${styles.tabSmall} ${viewMode === 'list' ? styles.tabSmallActive : ''}`}
-                                onClick={() => setViewMode('list')}
-                            >
-                                List
-                            </button>
-                            <button
-                                className={`${styles.tabSmall} ${viewMode === 'calendar' ? styles.tabSmallActive : ''}`}
-                                onClick={() => setViewMode('calendar')}
-                            >
-                                Calendar
-                            </button>
+                            <button className={`${styles.tabSmall} ${viewMode === 'list' ? styles.tabSmallActive : ''}`} onClick={() => setViewMode('list')}>Danh sách</button>
+                            <button className={`${styles.tabSmall} ${viewMode === 'calendar' ? styles.tabSmallActive : ''}`} onClick={() => setViewMode('calendar')}>Lịch</button>
                         </div>
                     </div>
                 </div>
 
+                {/* Tabs */}
                 <div className={styles.tabs}>
-                    <button className={`${styles.tab} ${tab === 'upcoming' ? styles.tabActive : ''}`} onClick={() => setTab('upcoming')}>
-                        Upcoming
-                    </button>
-                    <button className={`${styles.tab} ${tab === 'past' ? styles.tabActive : ''}`} onClick={() => setTab('past')}>
-                        Past
-                    </button>
-                    <button className={`${styles.tab} ${tab === 'cancelled' ? styles.tabActive : ''}`} onClick={() => setTab('cancelled')}>
-                        Cancelled
-                    </button>
+                    {(['upcoming', 'past', 'cancelled'] as TabKey[]).map(t => (
+                        <button key={t} className={`${styles.tab} ${tab === t ? styles.tabActive : ''}`} onClick={() => setTab(t)}>
+                            {t === 'upcoming' ? 'Sắp tới' : t === 'past' ? 'Lịch sử' : 'Đã hủy'}
+                        </button>
+                    ))}
                 </div>
 
                 {error && <div className={styles.error}>{error}</div>}
@@ -313,65 +229,58 @@ export default function VetAppointments() {
                         <table className={styles.table}>
                             <thead>
                                 <tr>
-                                    <th className={styles.th}>Date/Time</th>
-                                    <th className={styles.th}>Owner</th>
-                                    <th className={styles.th}>Pet</th>
-                                    <th className={styles.th}>Service</th>
-                                    <th className={styles.th}>Status</th>
-                                    <th className={styles.th} style={{ width: 160 }}>
-                                        Actions
-                                    </th>
+                                    <th className={styles.th}>Thời gian</th>
+                                    <th className={styles.th}>Chủ nuôi</th>
+                                    <th className={styles.th}>Thú cưng</th>
+                                    <th className={styles.th}>Dịch vụ</th>
+                                    <th className={styles.th}>Trạng thái</th>
+                                    <th className={styles.th}>Thao tác</th>
                                 </tr>
                             </thead>
-
                             <tbody>
-                                {rows.map((a) => {
-                                    const isUnassignedPending = a.status === 'pending' && !a.vet;
-
-                                    return (
-                                        <tr key={a.id} className={styles.tr}>
-                                            <td className={styles.td}>
-                                                <div className={styles.dtMain}>{fmtDateTime(a.start_time)}</div>
-                                                {a.end_time ? <div className={styles.dtSub}>→ {fmtDateTime(a.end_time)}</div> : null}
-                                            </td>
-
-                                            <td className={styles.td}>
-                                                <div className={styles.ownerMain}>{a.owner?.full_name || '-'}</div>
-                                                <div className={styles.ownerSub}>{a.owner?.email || a.owner?.phone || ''}</div>
-                                            </td>
-
-                                            <td className={styles.td}>{a.pet?.name || '-'}</td>
-
-                                            <td className={styles.td}>
-                                                <span className={styles.servicePill}>{a.service_type || '-'}</span>
-                                            </td>
-
-                                            <td className={styles.td}>
-                                                <span className={`${styles.badge} ${statusClass(a.status, styles)}`}>{statusLabel(a.status)}</span>
-                                            </td>
-
-                                            <td className={styles.td}>
-                                                <div className={styles.actionGroup}>
+                                {rows.map((a) => (
+                                    <tr key={a.id} className={styles.tr}>
+                                        <td className={styles.td}>
+                                            <div className={styles.dtMain}>{fmtDateTime(a.start_time)}</div>
+                                        </td>
+                                        <td className={styles.td}>
+                                            <div className={styles.ownerMain}>{a.owner?.full_name || '-'}</div>
+                                            <div className={styles.ownerSub}>{a.owner?.phone}</div>
+                                        </td>
+                                        <td className={styles.td}>{a.pet?.name || '-'}</td>
+                                        <td className={styles.td}><span className={styles.servicePill}>{a.service_type}</span></td>
+                                        <td className={styles.td}>
+                                            <span className={`${styles.badge} ${statusClass(a.status, styles)}`}>{statusLabel(a.status)}</span>
+                                        </td>
+                                        <td className={styles.td}>
+                                            <div className={styles.actionGroup}>
+                                                {/* Nút Accept cho các cuộc hẹn Pending chưa có bác sĩ */}
+                                                {a.status === 'pending' && !a.vet_id && (
                                                     <button
                                                         className={`${styles.button} ${styles.buttonPrimary}`}
-                                                        onClick={() => acceptAppointment(a.id)}
-                                                        disabled={!isUnassignedPending || actionId === a.id}
-                                                        title={!isUnassignedPending ? 'Only unassigned pending appointments can be accepted' : 'Accept appointment'}
+                                                        onClick={() => handleAccept(a.id)}
+                                                        disabled={actionId === a.id}
                                                     >
-                                                        {actionId === a.id ? 'Accepting…' : 'Accept'}
+                                                        {actionId === a.id ? 'Đang nhận...' : 'Nhận lịch'}
                                                     </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
+                                                )}
 
-                                {!loading && rows.length === 0 && (
-                                    <tr>
-                                        <td className={styles.td} colSpan={6}>
-                                            No appointments found.
+                                                {/* Nút Complete cho cuộc hẹn của chính mình */}
+                                                {a.status === 'confirmed' && a.vet_id === user.id && (
+                                                    <button
+                                                        className={styles.button}
+                                                        style={{ backgroundColor: '#10b981', color: '#fff', border: 'none' }}
+                                                        onClick={() => handleOpenCompleteModal(a)}
+                                                    >
+                                                        Hoàn thành
+                                                    </button>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
+                                ))}
+                                {!loading && rows.length === 0 && (
+                                    <tr><td colSpan={6} className={styles.td} style={{ textAlign: 'center' }}>Không tìm thấy cuộc hẹn nào.</td></tr>
                                 )}
                             </tbody>
                         </table>
@@ -379,89 +288,62 @@ export default function VetAppointments() {
                 ) : (
                     <div className={styles.calendarWrap}>
                         <div className={styles.calendarHeader}>
-                            <button className={styles.button} onClick={() => setMonthCursor((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))}>
-                                Prev
-                            </button>
-
-                            <div className={styles.calendarTitle}>{monthLabel}</div>
-
-                            <button className={styles.button} onClick={() => setMonthCursor((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1))}>
-                                Next
-                            </button>
+                            <button className={styles.button} onClick={() => setMonthCursor(new Date(monthCursor.getFullYear(), monthCursor.getMonth() - 1, 1))}>Trước</button>
+                            <div className={styles.calendarTitle}>{monthCursor.toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' })}</div>
+                            <button className={styles.button} onClick={() => setMonthCursor(new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 1))}>Sau</button>
                         </div>
-
                         <div className={styles.calendarGrid}>
-                            {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
-                                <div key={d} className={styles.calDow}>
-                                    {d}
-                                </div>
-                            ))}
-
-                            {monthDaysGrid.map((cell) => {
+                            {['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map(d => <div key={d} className={styles.calDow}>{d}</div>)}
+                            {monthDaysGrid.map(cell => {
                                 const count = countsByDay.get(cell.ymd) ?? 0;
-                                const selected = selectedDay === cell.ymd;
                                 return (
                                     <button
                                         key={cell.ymd}
-                                        className={`${styles.calCell} ${cell.inMonth ? '' : styles.calCellMuted} ${selected ? styles.calCellSelected : ''}`}
+                                        className={`${styles.calCell} ${!cell.inMonth ? styles.calCellMuted : ''} ${selectedDay === cell.ymd ? styles.calCellSelected : ''}`}
                                         onClick={() => setSelectedDay(cell.ymd)}
-                                        title={count ? `${count} appointment(s)` : 'No appointments'}
                                     >
                                         <div className={styles.calDayNum}>{cell.date.getDate()}</div>
-                                        {count > 0 ? <div className={styles.calCount}>{count}</div> : <div className={styles.calCountEmpty} />}
+                                        {count > 0 && <div className={styles.calCount}>{count}</div>}
                                     </button>
                                 );
                             })}
                         </div>
-
                         <div className={styles.dayPanel}>
-                            <div className={styles.dayPanelHeader}>
-                                <div className={styles.dayPanelTitle}>{selectedDay ? `Appointments on ${selectedDay}` : 'Select a day'}</div>
-                                <div className={styles.dayPanelSub}>{selectedDay ? `${dayList.length} item(s)` : ''}</div>
-                            </div>
-
-                            {selectedDay && dayList.length === 0 && <div className={styles.hint}>No appointments on this day.</div>}
-
-                            {selectedDay && dayList.length > 0 && (
-                                <div className={styles.dayList}>
-                                    {dayList.map((a) => {
-                                        const isUnassignedPending = a.status === 'pending' && !a.vet;
-
-                                        return (
-                                            <div key={a.id} className={styles.dayItem}>
-                                                <div className={styles.dayItemMain}>
-                                                    <div className={styles.dayTime}>{fmtDateTime(a.start_time)}</div>
-                                                    <div className={styles.dayOwner}>{a.owner?.full_name || '-'}</div>
-                                                </div>
-
-                                                <div className={styles.dayItemSub}>
-                                                    <span className={styles.servicePill}>{a.service_type || '-'}</span>
-                                                    <span className={`${styles.badge} ${statusClass(a.status, styles)}`}>{statusLabel(a.status)}</span>
-                                                    <span className={styles.dayPet}>{a.pet?.name || '-'}</span>
-
-                                                    <button
-                                                        className={`${styles.button} ${styles.buttonPrimary}`}
-                                                        onClick={() => acceptAppointment(a.id)}
-                                                        disabled={!isUnassignedPending || actionId === a.id}
-                                                        title={!isUnassignedPending ? 'Only unassigned pending appointments can be accepted' : 'Accept appointment'}
-                                                        style={{ marginLeft: 'auto' }}
-                                                    >
-                                                        {actionId === a.id ? 'Accepting…' : 'Accept'}
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
+                            <div className={styles.dayPanelTitle}>{selectedDay ? `Ngày ${selectedDay}` : 'Chọn một ngày'}</div>
+                            {dayList.map(a => (
+                                <div key={a.id} className={styles.dayItem}>
+                                    <div className={styles.dayItemMain}>
+                                        <div className={styles.dayTime}>{fmtDateTime(a.start_time)}</div>
+                                        <div className={styles.dayOwner}>{a.owner?.full_name} ({a.pet?.name})</div>
+                                    </div>
+                                    <div className={styles.actionGroup}>
+                                        {a.status === 'pending' && !a.vet_id && (
+                                            <button className={styles.buttonSmall} onClick={() => handleAccept(a.id)}>Nhận</button>
+                                        )}
+                                        {a.status === 'confirmed' && a.vet_id === user.id && (
+                                            <button className={styles.buttonSmall} onClick={() => handleOpenCompleteModal(a)}>Khám xong</button>
+                                        )}
+                                    </div>
                                 </div>
-                            )}
+                            ))}
                         </div>
                     </div>
                 )}
             </div>
 
-            <div className={styles.hint}>
-                Mục A: List + Calendar view cho Vet (bao gồm pending chưa gán). Các action Confirm/Reject/Complete sẽ làm ở mục tiếp theo.
-            </div>
+            <MedicalRecordModal
+                isOpen={recordModalOpen}
+                onClose={() => setRecordModalOpen(false)}
+                mode="write"
+                appointmentId={selectedAppointmentForRecord?.id || null}
+                petId={selectedAppointmentForRecord?.pet?.id}
+                petName={selectedAppointmentForRecord?.pet?.name || ''}
+                vetId={user.id}
+                onRecordSaved={() => {
+                    setRecordModalOpen(false);
+                    fetchAppointments();
+                }}
+            />
         </div>
     );
 }

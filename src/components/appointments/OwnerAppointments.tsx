@@ -4,14 +4,13 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
 import styles from './OwnerAppointments.module.css';
+import MedicalRecordModal from './MedicalRecordModal';
 import CreateAppointmentModal from './CreateAppointmentModal';
 
 type TabKey = 'upcoming' | 'past' | 'cancelled';
 
 type PetOption = { id: string; name: string | null };
 
-// Supabase join có thể trả về object hoặc array (tùy schema/typing),
-// nên mình chuẩn hóa bằng type linh hoạt.
 type SupabaseJoinOne<T> = T | T[] | null;
 
 type AppointmentRow = {
@@ -119,6 +118,9 @@ export default function OwnerAppointments() {
     const [actionId, setActionId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [createOpen, setCreateOpen] = useState(false);
+
+    const [reportModalOpen, setReportModalOpen] = useState(false);
+    const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
 
     // filters
     const [petId, setPetId] = useState<string>('');
@@ -539,6 +541,21 @@ export default function OwnerAppointments() {
                                                 {actionId === a.id ? 'Cancelling…' : 'Cancel'}
                                             </button>
                                         </div>
+
+                                        {/* --- NÚT XEM BỆNH ÁN --- */}
+                                        {a.status === 'completed' && (
+                                            <button
+                                                className={styles.button}
+                                                onClick={() => {
+                                                    setSelectedReportId(a.id);
+                                                    setReportModalOpen(true);
+                                                }}
+                                                style={{ marginTop: '4px', width: '100%', fontSize: '12px' }}
+                                            >
+                                                📄 Medical Report
+                                            </button>
+                                        )}
+                                        {/* ----------------------- */}
                                     </td>
                                 </tr>
                             ))}
@@ -676,6 +693,13 @@ export default function OwnerAppointments() {
                     setCreateOpen(false);
                     void fetchAppointments();
                 }}
+            />
+
+            <MedicalRecordModal
+                isOpen={reportModalOpen}
+                onClose={() => setReportModalOpen(false)}
+                mode="read"
+                appointmentId={selectedReportId}
             />
         </div>
     );

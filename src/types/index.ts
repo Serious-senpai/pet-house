@@ -21,6 +21,7 @@ export interface Pet {
     id: string;
     owner_id: string;
     name: string;
+    species: string;
     date_of_birth: string | null;
     breed: string | null;
     weight_kg: number | null;
@@ -79,4 +80,17 @@ export interface BoardingHealthLog {
     notes: string | null;
     created_at: string;
     updated_at: string;
+}
+
+export interface MedicalRecord {
+    id: string;
+    appointment_id: string;
+    pet_id: string;
+    vet_id: string;
+    diagnosis: string;
+    symptoms: string;
+    treatment: string;
+    prescription: string;
+    doctor_notes: string;
+    created_at: string;
 }

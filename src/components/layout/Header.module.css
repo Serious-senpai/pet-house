@@ -1,26 +1,27 @@
+/* components/layout/Header.module.css */
 .header {
     background-color: white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    position: sticky; /* Giữ header luôn ở trên cùng khi cuộn */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    position: sticky;
     top: 0;
     z-index: 1000;
     width: 100%;
+    height: 64px; /* Cố định chiều cao */
 }
 
 .headerContent {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 1rem 2rem;
+    padding: 0 2rem;
+    height: 100%;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-/* Thêm class này để link logo không bị gạch chân */
 .logoLink {
     text-decoration: none;
     color: inherit;
-    cursor: pointer;
 }
 
 .logo {
@@ -35,20 +36,131 @@
 .nav {
     display: flex;
     align-items: center;
+    gap: 1.5rem;
+}
+
+/* Auth Buttons (cho người chưa đăng nhập) */
+.authButtons { display: flex; gap: 1rem; }
+.loginButton { padding: 0.5rem 1rem; border: 1px solid #2563eb; color: #2563eb; background: none; border-radius: 6px; cursor: pointer; font-weight: 500; }
+.registerButton { padding: 0.5rem 1rem; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; }
+
+/* --- USER PROFILE DROPDOWN --- */
+.userSection {
+    position: relative; /* Để căn vị trí dropdown */
+    display: flex;
+    align-items: center;
     gap: 1rem;
 }
 
-/* ... Copy các class còn lại liên quan đến button, userSection từ LandingPage cũ sang đây ... */
-.authButtons { display: flex; gap: 1rem; }
-.loginButton { padding: 0.5rem 1rem; border: 1px solid #2563eb; color: #2563eb; background: none; border-radius: 4px; cursor: pointer; }
-.registerButton { padding: 0.5rem 1rem; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; }
-.userSection { display: flex; align-items: center; gap: 1rem; }
-.userInfo { display: flex; flex-direction: column; align-items: flex-end; font-size: 0.875rem; }
-.userName { font-weight: 600; color: #1f2937; }
-.userRole { color: #6b7280; font-size: 0.75rem; }
-.headerLinkButton { text-decoration: none; color: #4b5563; padding: 0.5rem; border-radius: 4px; transition: background 0.2s; }
-.headerLinkButton:hover { background-color: #f3f4f6; color: #2563eb; }
-.logoutButton { padding: 0.5rem 1rem; border: 1px solid #ef4444; color: #ef4444; background: none; border-radius: 4px; cursor: pointer; font-size: 0.875rem; }
-.logoutButton:hover { background-color: #fef2f2; }
+/* Nút kích hoạt menu (Tên + Role) */
+.profileTrigger {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+    user-select: none;
+}
+
+.profileTrigger:hover {
+    background-color: #f3f4f6;
+}
+
+.userInfo {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    line-height: 1.2;
+}
+
+.userName {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #1f2937;
+}
+
+.userRole {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.avatarPlaceholder {
+    width: 36px;
+    height: 36px;
+    background-color: #e0e7ff;
+    color: #4f46e5;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.chevron {
+    font-size: 0.8rem;
+    color: #9ca3af;
+}
+
+/* Menu xổ xuống */
+.dropdownMenu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 8px;
+    width: 240px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    border: 1px solid #e5e7eb;
+    padding: 8px 0;
+    animation: slideDown 0.2s ease-out;
+    transform-origin: top right;
+}
+
+.menuItem {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    text-decoration: none;
+    color: #374151;
+    font-size: 0.95rem;
+    transition: background-color 0.2s;
+}
+
+.menuItem:hover {
+    background-color: #f9fafb;
+    color: #2563eb;
+}
+
+.menuDivider {
+    height: 1px;
+    background-color: #e5e7eb;
+    margin: 6px 0;
+}
+
+.logoutItem {
+    color: #ef4444;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.logoutItem:hover {
+    background-color: #fef2f2;
+    color: #dc2626;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
 .loadingSpinner { width: 20px; height: 20px; border: 2px solid #f3f3f3; border-top: 2px solid #2563eb; border-radius: 50%; animation: spin 1s linear infinite; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }

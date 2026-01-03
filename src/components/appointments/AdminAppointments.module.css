@@ -1,0 +1,172 @@
+.page {
+    padding: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #374151;
+}
+
+.card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    padding: 24px;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+}
+
+.title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.subtitle {
+    margin-top: 4px;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.headerRight {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.filters {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding: 16px;
+    background-color: #f9fafb;
+    border-radius: 8px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #4b5563;
+    text-transform: uppercase;
+}
+
+.select, .input {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    min-width: 140px;
+}
+
+.tableWrap {
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.th {
+    text-align: left;
+    padding: 12px 16px;
+    background: #f3f4f6;
+    color: #4b5563;
+    font-weight: 600;
+    border-bottom: 2px solid #e5e7eb;
+    white-space: nowrap;
+}
+
+.td {
+    padding: 16px;
+    border-bottom: 1px solid #e5e7eb;
+    vertical-align: top;
+}
+
+.tr:last-child .td {
+    border-bottom: none;
+}
+
+/* Badges */
+.badge {
+    display: inline-flex;
+    padding: 2px 10px;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.badgePending { background: #fef3c7; color: #92400e; }
+.badgeConfirmed { background: #d1fae5; color: #065f46; }
+.badgeCompleted { background: #dbeafe; color: #1e40af; }
+.badgeCancelled { background: #fee2e2; color: #991b1b; }
+.badgeDefault { background: #f3f4f6; color: #4b5563; }
+
+.servicePill {
+    display: inline-block;
+    background: #e0e7ff;
+    color: #3730a3;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.button {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 14px;
+    cursor: pointer;
+    border: 1px solid #d1d5db;
+    background: white;
+    color: #374151;
+    transition: all 0.2s;
+}
+
+.button:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+}
+
+.buttonPrimary {
+    background: #2563eb;
+    color: white;
+    border: none;
+}
+.buttonPrimary:hover { background: #1d4ed8; }
+
+.buttonDanger {
+    background: white;
+    color: #ef4444;
+    border-color: #fca5a5;
+}
+.buttonDanger:hover { background: #fef2f2; border-color: #ef4444; }
+
+.error {
+    background: #fee2e2;
+    color: #991b1b;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+}
+
+.ownerInfo { font-weight: 500; color: #111827; }
+.ownerSub { font-size: 12px; color: #6b7280; }
+.vetInfo { color: #4b5563; font-style: italic; }
+.emptyVet { color: #9ca3af; font-size: 12px; }

@@ -1,0 +1,238 @@
+/* components/appointments/MedicalRecordModal.module.css */
+
+/* Lớp phủ màn hình (Overlay) */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px); /* Hiệu ứng mờ nền phía sau */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1100;
+    animation: fadeIn 0.2s ease-out;
+}
+
+/* Hộp Modal chính */
+.modal {
+    background-color: #ffffff;
+    width: 95%;
+    max-width: 650px;
+    max-height: 90vh; /* Giới hạn chiều cao */
+    border-radius: 12px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Để bo góc không bị nội dung đè lên */
+    animation: slideUp 0.3s ease-out;
+}
+
+/* Header */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e5e7eb;
+    background-color: #f9fafb;
+}
+
+.title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #111827;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.closeButton {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.closeButton:hover {
+    background-color: #e5e7eb;
+    color: #4b5563;
+}
+
+/* Body (Phần nội dung cuộn được) */
+.body {
+    padding: 24px;
+    overflow-y: auto; /* Cho phép cuộn dọc nếu nội dung dài */
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Loading State */
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: #6b7280;
+    font-style: italic;
+}
+
+/* --- WRITE MODE (Form Styles) --- */
+.formGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+.label span {
+    color: #ef4444; /* Dấu sao đỏ bắt buộc */
+}
+
+.input, .textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    font-family: inherit;
+}
+
+.input:focus, .textarea:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.infoText {
+    font-size: 0.9rem;
+    color: #4b5563;
+    background-color: #eff6ff;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #dbeafe;
+}
+
+/* --- READ MODE (Report Styles) --- */
+.readSection {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.readRow {
+    border-bottom: 1px solid #f3f4f6;
+    padding-bottom: 12px;
+}
+
+.readRow:last-child {
+    border-bottom: none;
+}
+
+.readLabel {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.readValue {
+    font-size: 1rem;
+    color: #1f2937;
+    line-height: 1.5;
+    white-space: pre-wrap; /* Giữ xuống dòng cho đơn thuốc */
+}
+
+.metaInfo {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    text-align: right;
+    margin-top: 10px;
+    font-style: italic;
+}
+
+.emptyState {
+    text-align: center;
+    color: #6b7280;
+    padding: 20px;
+    background: #f9fafb;
+    border-radius: 8px;
+}
+
+/* Footer & Buttons */
+.footer {
+    padding: 16px 24px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    background-color: #f9fafb;
+}
+
+.btnPrimary {
+    background-color: #2563eb;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-size: 0.95rem;
+}
+
+.btnPrimary:hover {
+    background-color: #1d4ed8;
+}
+
+.btnPrimary:disabled {
+    background-color: #93c5fd;
+    cursor: not-allowed;
+}
+
+.btnSecondary {
+    background-color: white;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btnSecondary:hover {
+    background-color: #f3f4f6;
+    border-color: #9ca3af;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
