@@ -12,11 +12,13 @@ import {
     CheckCircle,
     XCircle,
     Calendar,
-    User,
-    ClipboardList
+    ClipboardList,
+    Ban
 } from 'lucide-react';
+import BoardingAnalytics from './BoardingAnalytics';
 
-type TabKey = 'pending' | 'confirmed' | 'checked_in' | 'completed';
+// 1. Thêm 'cancelled' vào đây
+type TabKey = 'pending' | 'confirmed' | 'checked_in' | 'completed' | 'cancelled';
 
 interface BookingWithDetails extends BoardingBooking {
     pet?: Pet | null;
@@ -178,10 +180,13 @@ export default function StaffBoardingDashboard() {
                 <p className={styles.subtitle}>Manage pet stays and daily care</p>
             </div>
 
+            <BoardingAnalytics />
+
             {error && <div className={styles.banner}>{error}</div>}
 
             <div className={styles.tabs}>
-                {['pending', 'confirmed', 'checked_in', 'completed'].map((t) => (
+                {/* 2. Thêm cancelled vào danh sách render Tabs */}
+                {['pending', 'confirmed', 'checked_in', 'completed', 'cancelled'].map((t) => (
                     <button
                         key={t}
                         className={`${styles.tab} ${tab === t ? styles.tabActive : ''}`}
@@ -309,13 +314,29 @@ export default function StaffBoardingDashboard() {
                                         <ClipboardList size={18} /> View History
                                     </button>
                                 )}
+
+                                {/* 3. Hành động cho Cancelled */}
+                                {tab === 'cancelled' && (
+                                    <>
+                                        <div style={{ color: '#ef4444', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.9rem' }}>
+                                            <Ban size={18} /> CANCELLED
+                                        </div>
+                                        <button
+                                            className={`${styles.btn} ${styles.btnLight}`}
+                                            onClick={() => openHealthModal(booking)}
+                                            style={{ marginLeft: 'auto' }}
+                                        >
+                                            View Logs
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         </div>
                     ))}
                 </div>
             )}
 
-            {/* --- MODALS (Reject & Health) giữ nguyên logic --- */}
+            {/* --- MODALS (Giữ nguyên) --- */}
             {showRejectModal && (
                 <div className={styles.modal} onClick={() => setShowRejectModal(false)}>
                     <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
@@ -370,7 +391,7 @@ export default function StaffBoardingDashboard() {
                             )}
                             <div style={{ marginTop: '1rem' }}>
                                 <h3>History</h3>
-                                {healthLogs.map(log => (
+                                {healthLogs.length === 0 ? <p style={{ color: '#666' }}>No logs recorded.</p> : healthLogs.map(log => (
                                     <div key={log.id} style={{ background: '#f9fafb', padding: '10px', marginBottom: '10px', borderRadius: '8px' }}>
                                         <div><strong>{new Date(log.log_date).toLocaleString()}</strong> - {log.health_status}</div>
                                         <div>{log.behavior_notes}</div>

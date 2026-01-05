@@ -121,9 +121,6 @@ export default function Header() {
                                                 <Link href="/boarding/staff" className={styles.menuItem} onClick={() => setIsMenuOpen(false)}>
                                                     <span>🗂️</span> Staff Boarding
                                                 </Link>
-                                                <Link href="/boarding/approvals" className={styles.menuItem} onClick={() => setIsMenuOpen(false)}>
-                                                    <span>✅</span> Approvals
-                                                </Link>
                                             </>
                                         )}
 
