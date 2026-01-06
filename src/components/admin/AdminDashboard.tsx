@@ -1,4 +1,3 @@
-// components/admin/AdminDashboard.tsx
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -26,6 +25,9 @@ export default function AdminDashboard() {
         totalStaff: 0,
         totalAdmins: 0,
     });
+
+    // State cho việc xóa
+    const [deletingId, setDeletingId] = useState<string | null>(null);
 
     const [activeTab, setActiveTab] = useState<'pets' | 'staff' | 'owners'>('pets');
 
@@ -77,6 +79,58 @@ export default function AdminDashboard() {
         fetchData();
     }, [user]);
 
+    // --- HÀM XỬ LÝ XÓA USER ---
+    const handleDeleteUser = async (targetUserId: string, targetUserRole: string) => {
+        // 1. Không cho phép tự xóa chính mình
+        if (targetUserId === user?.id) {
+            alert("You cannot delete your own admin account.");
+            return;
+        }
+
+        // 2. Xác nhận
+        const confirmMessage = targetUserRole === 'staff'
+            ? "Are you sure? Removing a staff member will revoke their access immediately."
+            : "Are you sure? Deleting this owner will also DELETE ALL their pets and booking history.";
+
+        if (!window.confirm(confirmMessage)) return;
+
+        setDeletingId(targetUserId);
+
+        try {
+            // 3. Xóa khỏi bảng profiles
+            const { error } = await supabase
+                .from('profiles')
+                .delete()
+                .eq('id', targetUserId);
+
+            if (error) throw error;
+
+            // 4. Cập nhật State UI (Xóa khỏi danh sách đang hiển thị)
+            setUsers(prev => prev.filter(u => u.id !== targetUserId));
+
+            // Cập nhật lại stats (tạm thời trừ đi 1)
+            setStats(prev => ({
+                ...prev,
+                totalOwners: targetUserRole === 'pet_owner' ? prev.totalOwners - 1 : prev.totalOwners,
+                totalStaff: targetUserRole === 'staff' ? prev.totalStaff - 1 : prev.totalStaff
+            }));
+
+            // Nếu xóa owner, cần xóa cả pet của họ khỏi list pets đang hiển thị
+            if (targetUserRole === 'pet_owner') {
+                setPets(prev => prev.filter(p => p.owner_id !== targetUserId));
+                setStats(prev => ({ ...prev, totalPets: pets.length })); // Recalc pets sau
+            }
+
+            alert("User deleted successfully.");
+
+        } catch (err: any) {
+            console.error("Delete error:", err);
+            alert("Failed to delete user: " + err.message);
+        } finally {
+            setDeletingId(null);
+        }
+    };
+
     if (!user || user.role !== 'admin') {
         return (
             <div className={styles.container}>
@@ -126,8 +180,8 @@ export default function AdminDashboard() {
                         <th>Full Name</th>
                         <th>Email</th>
                         <th>Role</th>
-                        <th>Phone</th>
                         <th>Joined Date</th>
+                        <th style={{ width: '100px', textAlign: 'center' }}>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -140,11 +194,22 @@ export default function AdminDashboard() {
                                     {u.role.replace('_', ' ').toUpperCase()}
                                 </span>
                             </td>
-                            <td>{u.phone || '-'}</td>
                             <td>{new Date(u.created_at).toLocaleDateString()}</td>
+                            <td style={{ textAlign: 'center' }}>
+                                {u.id !== user.id && (
+                                    <button
+                                        className={styles.btnDelete}
+                                        onClick={() => handleDeleteUser(u.id, u.role)}
+                                        disabled={deletingId === u.id}
+                                        title="Delete this user"
+                                    >
+                                        {deletingId === u.id ? '...' : '🗑️'}
+                                    </button>
+                                )}
+                            </td>
                         </tr>
                     )) : (
-                        <tr><td colSpan={5} className={styles.empty}>No users found</td></tr>
+                        <tr><td colSpan={6} className={styles.empty}>No users found</td></tr>
                     )}
                 </tbody>
             </table>

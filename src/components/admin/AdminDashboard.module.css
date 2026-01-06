@@ -129,3 +129,29 @@
 }
 
 .error { color: #dc2626; }
+
+.btnDelete {
+    background-color: transparent;
+    border: 1px solid #fee2e2;
+    color: #ef4444;
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btnDelete:hover {
+    background-color: #fee2e2;
+    border-color: #ef4444;
+    transform: scale(1.1);
+}
+
+.btnDelete:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
