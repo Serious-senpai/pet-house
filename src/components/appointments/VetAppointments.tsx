@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
 import MedicalRecordModal from './MedicalRecordModal';
 import styles from './VetAppointments.module.css';
+import { useCallback } from 'react';
 
 // --- Types ---
 type TabKey = 'upcoming' | 'past' | 'cancelled';
@@ -61,7 +62,7 @@ function statusLabel(status: string | null) {
     return status ? labels[status] || status : '-';
 }
 
-function statusClass(status: string | null, stylesObj: any) {
+function statusClass(status: string | null, stylesObj: Record<string, string>) {
     switch (status) {
         case 'pending': return stylesObj.badgePending;
         case 'confirmed': return stylesObj.badgeConfirmed;
@@ -88,7 +89,7 @@ export default function VetAppointments() {
     const [monthCursor, setMonthCursor] = useState<Date>(new Date());
     const [selectedDay, setSelectedDay] = useState<string>('');
 
-    const fetchAppointments = async () => {
+    const fetchAppointments = useCallback(async () => {
         if (!user || user.role !== 'vet') return;
         setLoading(true);
         setError(null);
@@ -127,16 +128,17 @@ export default function VetAppointments() {
                 vet: firstOrNull(r.vet),
             }));
             setRows(normalized);
-        } catch (err: any) {
+        } catch (e: unknown) {
+            const err = e as Error;
             setError(err.message);
         } finally {
             setLoading(false);
         }
-    };
+    }, [user, tab]);
 
     useEffect(() => {
         fetchAppointments();
-    }, [user?.id, tab]);
+    }, [fetchAppointments]);
 
     const handleAccept = async (id: string) => {
         if (!user) return;
@@ -152,7 +154,8 @@ export default function VetAppointments() {
             if (updateError) throw updateError;
             if (!data) alert('Cuộc hẹn này đã được bác sĩ khác nhận.');
             await fetchAppointments();
-        } catch (err: any) {
+        } catch (e: unknown) {
+            const err = e as Error;
             alert(err.message);
         } finally {
             setActionId(null);

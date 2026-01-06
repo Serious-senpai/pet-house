@@ -3,14 +3,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
-import { BoardingRoom, BoardingBooking, Pet } from '@/types';
+import { BoardingRoom, Pet } from '@/types';
 import styles from './BoardingRegistration.module.css';
 
-function addDays(date: Date, days: number) {
-    const result = new Date(date);
-    result.setDate(result.getDate() + days);
-    return result;
-}
+// function addDays(date: Date, days: number) {
+//     const result = new Date(date);
+//     result.setDate(result.getDate() + days);
+//     return result;
+// }
 
 function calcDays(checkIn: string, checkOut: string): number {
     if (!checkIn || !checkOut) return 0;
@@ -67,7 +67,8 @@ export default function BoardingRegistration() {
 
                 if (err) throw err;
                 setPets((data as Pet[]) || []);
-            } catch (e: any) {
+            } catch (err: unknown) {
+                const e = err as Error;
                 setError(e?.message || 'Failed to load pets');
             } finally {
                 setLoading(false);
@@ -93,7 +94,8 @@ export default function BoardingRegistration() {
 
             if (roomErr) throw roomErr;
             setRooms((roomData as BoardingRoom[]) || []);
-        } catch (e: any) {
+        } catch (err: unknown) {
+            const e = err as Error;
             setError(e?.message || 'Failed to load rooms');
         } finally {
             setLoading(false);
@@ -168,7 +170,8 @@ export default function BoardingRegistration() {
             setSpecialNotes('');
             setDietaryReq('');
             setMedicalReq('');
-        } catch (e: any) {
+        } catch (err: unknown) {
+            const e = err as Error;
             setError(e?.message || 'Failed to create booking');
         } finally {
             setLoading(false);

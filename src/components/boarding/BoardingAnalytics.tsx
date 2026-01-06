@@ -101,7 +101,7 @@ export default function BoardingAnalytics() {
                         <Tooltip
                             contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                             // Sửa dòng này: chỉ trả về value
-                            formatter={(value: any) => value}
+                            formatter={(value?: number) => value}
                         />
                     </PieChart>
                 </ResponsiveContainer>

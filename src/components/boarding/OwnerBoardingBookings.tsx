@@ -21,16 +21,11 @@ export default function OwnerBoardingBookings() {
     const [healthLogs, setHealthLogs] = useState<BoardingHealthLog[]>([]);
     const [showLogs, setShowLogs] = useState(false);
 
-    if (!user || user.role !== 'pet_owner') {
-        return (
-            <div className={styles.container}>
-                <div className={styles.error}>Only pet owners can view booking history.</div>
-            </div>
-        );
-    }
-
     // Load user's bookings
     useEffect(() => {
+        if (!user || user.role !== 'pet_owner') {
+            return;
+        }
         const loadBookings = async () => {
             setLoading(true);
             setError(null);
@@ -44,7 +39,8 @@ export default function OwnerBoardingBookings() {
 
                 if (bookingErr) throw bookingErr;
                 setBookings((bookingData as unknown as BookingWithDetails[]) || []);
-            } catch (e: any) {
+            } catch (err: unknown) {
+                const e = err as Error;
                 setError(e?.message || 'Failed to load bookings');
             } finally {
                 setLoading(false);
@@ -52,7 +48,15 @@ export default function OwnerBoardingBookings() {
         };
 
         void loadBookings();
-    }, [user.id]);
+    }, [user]);
+
+    if (!user || user.role !== 'pet_owner') {
+        return (
+            <div className={styles.container}>
+                <div className={styles.error}>Only pet owners can view booking history.</div>
+            </div>
+        );
+    }
 
     const handleViewHealthLogs = async (booking: BookingWithDetails) => {
         setSelectedBooking(booking);
@@ -66,7 +70,8 @@ export default function OwnerBoardingBookings() {
 
             if (logsErr) throw logsErr;
             setHealthLogs((logs as BoardingHealthLog[]) || []);
-        } catch (e: any) {
+        } catch (err: unknown) {
+            const e = err as Error;
             setError(e?.message || 'Failed to load health logs');
         }
 
@@ -94,7 +99,7 @@ export default function OwnerBoardingBookings() {
         <div className={styles.container}>
             <div className={styles.header}>
                 <h1 className={styles.title}>My Boarding Bookings</h1>
-                <p className={styles.subtitle}>View and manage your pet's boarding reservations</p>
+                <p className={styles.subtitle}>View and manage your pet&apos;s boarding reservations</p>
             </div>
 
             {error && <div className={styles.banner}>{error}</div>}

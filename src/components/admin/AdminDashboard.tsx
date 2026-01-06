@@ -68,7 +68,8 @@ export default function AdminDashboard() {
                     totalAdmins: loadedUsers.filter(u => u.role === 'admin').length,
                 });
 
-            } catch (err: any) {
+            } catch (error) {
+                const err = error as Error;
                 console.error('Admin dashboard error:', err);
                 setError(err.message || 'Failed to load dashboard data');
             } finally {
@@ -123,7 +124,8 @@ export default function AdminDashboard() {
 
             alert("User deleted successfully.");
 
-        } catch (err: any) {
+        } catch (error: unknown) {
+            const err = error as Error;
             console.error("Delete error:", err);
             alert("Failed to delete user: " + err.message);
         } finally {

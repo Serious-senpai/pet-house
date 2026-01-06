@@ -45,7 +45,8 @@ export default function StaffBoardingDashboard() {
     const [rejectionReason, setRejectionReason] = useState('');
 
     // Health Log Form
-    const [healthStatus, setHealthStatus] = useState<'normal' | 'mild_issue' | 'serious_issue'>('normal');
+    type HealthStatus = 'normal' | 'mild_issue' | 'serious_issue';
+    const [healthStatus, setHealthStatus] = useState<HealthStatus>('normal');
     const [behaviorNotes, setBehaviorNotes] = useState('');
     const [foodIntake, setFoodIntake] = useState('');
     const [waterIntake, setWaterIntake] = useState('');
@@ -66,7 +67,8 @@ export default function StaffBoardingDashboard() {
 
                 if (error) throw error;
                 setBookings((data as unknown as BookingWithDetails[]) || []);
-            } catch (e: any) {
+            } catch (err: unknown) {
+                const e = err as Error;
                 setError(e.message);
             } finally {
                 setLoading(false);
@@ -96,7 +98,10 @@ export default function StaffBoardingDashboard() {
             const { error } = await supabase.from('boarding_bookings').update({ status: 'confirmed' }).eq('id', id);
             if (error) throw error;
             setBookings(prev => prev.filter(b => b.id !== id));
-        } catch (e: any) { setError(e.message); }
+        } catch (err: unknown) {
+            const e = err as Error;
+            setError(e.message);
+        }
         finally { setActionId(null); }
     };
 
@@ -108,7 +113,10 @@ export default function StaffBoardingDashboard() {
             if (error) throw error;
             setBookings(prev => prev.filter(b => b.id !== selectedBookingForReject.id));
             setShowRejectModal(false);
-        } catch (e: any) { setError(e.message); }
+        } catch (err: unknown) {
+            const e = err as Error;
+            setError(e.message);
+        }
         finally { setActionId(null); }
     };
 
@@ -122,7 +130,10 @@ export default function StaffBoardingDashboard() {
             }).eq('id', id);
             if (error) throw error;
             setBookings(prev => prev.filter(b => b.id !== id));
-        } catch (e: any) { setError(e.message); }
+        } catch (err: unknown) {
+            const e = err as Error;
+            setError(e.message);
+        }
         finally { setActionId(null); }
     };
 
@@ -137,7 +148,10 @@ export default function StaffBoardingDashboard() {
             }).eq('id', id);
             if (error) throw error;
             setBookings(prev => prev.filter(b => b.id !== id));
-        } catch (e: any) { setError(e.message); }
+        } catch (err: unknown) {
+            const e = err as Error;
+            setError(e.message);
+        }
         finally { setActionId(null); }
     };
 
@@ -167,7 +181,10 @@ export default function StaffBoardingDashboard() {
             // Refresh logs
             const { data } = await supabase.from('boarding_health_logs').select('*').eq('booking_id', selectedBookingForHealth.id).order('log_date', { ascending: false });
             setHealthLogs(data || []);
-        } catch (e: any) { alert(e.message); }
+        } catch (err: unknown) {
+            const e = err as Error;
+            alert(e.message);
+        }
         finally { setSavingLog(false); }
     };
 
@@ -371,7 +388,7 @@ export default function StaffBoardingDashboard() {
                                 <form onSubmit={handleAddLog} className={styles.logForm}>
                                     <div className={styles.field}>
                                         <label>Status</label>
-                                        <select value={healthStatus} onChange={e => setHealthStatus(e.target.value as any)}>
+                                        <select value={healthStatus} onChange={e => setHealthStatus(e.target.value as HealthStatus)}>
                                             <option value="normal">Normal</option>
                                             <option value="mild_issue">Mild Issue</option>
                                             <option value="serious_issue">Serious Issue</option>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
 import styles from './OwnerAppointments.module.css';
@@ -141,7 +141,7 @@ export default function OwnerAppointments() {
     const [editError, setEditError] = useState<string | null>(null);
 
     // để tránh thay đổi "now" trong cùng 1 session render
-    const now = useMemo(() => new Date(), []);
+    // const now = useMemo(() => new Date(), []);
 
     const fetchPets = async () => {
         if (!user) return;

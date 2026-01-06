@@ -32,38 +32,38 @@ export default function MedicalRecordModal({
     });
 
     useEffect(() => {
+        const resetForm = () => {
+            setRecord(null);
+            setFormData({
+                symptoms: '', diagnosis: '', treatment: '', prescription: '', doctor_notes: ''
+            });
+        };
+
+        const fetchRecord = async () => {
+            if (!appointmentId) return;
+            setLoading(true);
+            const { data } = await supabase
+                .from('medical_records')
+                .select('*')
+                .eq('appointment_id', appointmentId)
+                .maybeSingle();
+
+            if (data) {
+                setRecord(data as MedicalRecord);
+                if (mode === 'read') {
+                    // Fill data để hiển thị
+                }
+            }
+            setLoading(false);
+        };
+
         if (isOpen && appointmentId) {
             // Nếu là read hoặc write (để check xem đã có record chưa), ta đều fetch thử
             fetchRecord();
         } else {
             resetForm();
         }
-    }, [isOpen, appointmentId]);
-
-    const resetForm = () => {
-        setRecord(null);
-        setFormData({
-            symptoms: '', diagnosis: '', treatment: '', prescription: '', doctor_notes: ''
-        });
-    };
-
-    const fetchRecord = async () => {
-        if (!appointmentId) return;
-        setLoading(true);
-        const { data, error } = await supabase
-            .from('medical_records')
-            .select('*')
-            .eq('appointment_id', appointmentId)
-            .maybeSingle();
-
-        if (data) {
-            setRecord(data as MedicalRecord);
-            if (mode === 'read') {
-                // Fill data để hiển thị
-            }
-        }
-        setLoading(false);
-    };
+    }, [isOpen, appointmentId, mode]);
 
     const handleSubmit = async () => {
         if (!appointmentId || !petId || !vetId) return;
@@ -98,7 +98,8 @@ export default function MedicalRecordModal({
             if (onRecordSaved) onRecordSaved();
             onClose();
 
-        } catch (error: any) {
+        } catch (err: unknown) {
+            const error = err as Error;
             alert('Error saving record: ' + error.message);
         } finally {
             setLoading(false);

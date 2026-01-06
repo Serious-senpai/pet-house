@@ -169,7 +169,8 @@ export default function AdminAppointments() {
 
             if (error) throw error;
             await fetchAppointments();
-        } catch (e: any) {
+        } catch (error: unknown) {
+            const e = error as Error;
             setError(e.message || 'Failed to cancel appointment');
         } finally {
             setActionId(null);
@@ -288,7 +289,7 @@ export default function AdminAppointments() {
                                             <span className={styles.servicePill}>{row.service_type || 'General'}</span>
                                             {row.owner_note && (
                                                 <div style={{ fontSize: 12, marginTop: 6, fontStyle: 'italic', color: '#4b5563' }}>
-                                                    "{row.owner_note}"
+                                                    {row.owner_note}
                                                 </div>
                                             )}
                                         </td>

@@ -3,9 +3,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import styles from './NotificationBell.module.css';
+import { useCallback } from 'react';
 
 type Notification = {
     id: string;
@@ -24,7 +24,7 @@ export default function NotificationBell() {
     const dropdownRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
 
-    const fetchNotifications = async () => {
+    const fetchNotifications = useCallback(async () => {
         if (!user) return;
         const { data } = await supabase
             .from('notifications')
@@ -34,10 +34,11 @@ export default function NotificationBell() {
             .limit(10); // Lấy 10 tin mới nhất
 
         if (data) {
-            setNotifications(data as Notification[]);
-            setUnreadCount(data.filter((n: any) => !n.is_read).length);
+            const typedData = data as Notification[];
+            setNotifications(typedData);
+            setUnreadCount(typedData.filter(n => !n.is_read).length);
         }
-    };
+    }, [user]);
 
     // Lắng nghe Realtime (Tùy chọn, nếu không muốn thì bỏ qua useEffect này)
     useEffect(() => {
@@ -67,7 +68,7 @@ export default function NotificationBell() {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [user]);
+    }, [user, fetchNotifications]);
 
     // Click outside to close
     useEffect(() => {

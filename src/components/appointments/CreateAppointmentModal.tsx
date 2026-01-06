@@ -108,7 +108,8 @@ export default function CreateAppointmentModal({
 
                 if (vetErr) throw vetErr;
                 setVets((vetData ?? []) as VetOption[]);
-            } catch (e: any) {
+            } catch (err: unknown) {
+                const e = err as Error;
                 setError(e?.message || 'Failed to load options.');
             } finally {
                 setLoadingOptions(false);
@@ -120,7 +121,7 @@ export default function CreateAppointmentModal({
         if (!loadedRef.current) {
             void load();
         }
-    }, [isOpen, user?.id]);
+    }, [isOpen, user, petId]);
 
     if (!isOpen) return null;
 
@@ -160,7 +161,16 @@ export default function CreateAppointmentModal({
 
         setSaving(true);
         try {
-            const payload: any = {
+            const payload: {
+                owner_id: string;
+                pet_id: string;
+                service_type: ServiceType;
+                start_time: string;
+                end_time: string;
+                status: 'pending';
+                owner_note: string | null;
+                vet_id?: string;
+            } = {
                 owner_id: user.id,
                 pet_id: petId,
                 service_type: serviceType,
@@ -178,7 +188,8 @@ export default function CreateAppointmentModal({
 
             onCreated();
             resetAndClose();
-        } catch (e: any) {
+        } catch (err: unknown) {
+            const e = err as Error;
             setError(e?.message || 'Failed to create appointment.');
         } finally {
             setSaving(false);

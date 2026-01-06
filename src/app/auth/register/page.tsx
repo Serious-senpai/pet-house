@@ -13,10 +13,10 @@ export default function RegisterPage() {
         if (!loading && user) router.replace('/');
     }, [loading, user, router]);
 
-    const handleBack = () => {
-        if (typeof window !== 'undefined' && window.history.length > 1) router.back();
-        else router.push('/');
-    };
+    // const handleBack = () => {
+    //     if (typeof window !== 'undefined' && window.history.length > 1) router.back();
+    //     else router.push('/');
+    // };
 
     if (loading) return <div style={{ padding: 24 }}>Loading...</div>;
 

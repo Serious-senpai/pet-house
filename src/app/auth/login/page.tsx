@@ -13,11 +13,11 @@ export default function LoginPage() {
         if (!loading && user) router.replace('/');
     }, [loading, user, router]);
 
-    const handleBack = () => {
-        // nếu có trang trước thì back, còn không thì về home
-        if (typeof window !== 'undefined' && window.history.length > 1) router.back();
-        else router.push('/');
-    };
+    // const handleBack = () => {
+    //     // nếu có trang trước thì back, còn không thì về home
+    //     if (typeof window !== 'undefined' && window.history.length > 1) router.back();
+    //     else router.push('/');
+    // };
 
     if (loading) return <div style={{ padding: 24 }}>Loading...</div>;
 
