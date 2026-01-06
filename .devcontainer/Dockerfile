@@ -5,12 +5,4 @@ RUN apt-get update \
     && apt-get install -y \
     git \
     nodejs \
-    npm \
-    python-is-python3 \
-    python3 \
-    python3-pip \
-    python3-venv \
-    && python3 -m venv /venv
-
-COPY server/requirements.txt /tmp/requirements.txt
-RUN /venv/bin/pip install -r /tmp/requirements.txt
+    npm
