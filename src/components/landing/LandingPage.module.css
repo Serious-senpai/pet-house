@@ -276,8 +276,23 @@
 
 .featureGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    /* Ép buộc 3 cột bằng nhau */
+    grid-template-columns: repeat(3, 1fr);
     gap: 2rem;
+}
+
+/* Responsive: Trên màn hình nhỏ hơn 1024px thì chuyển về 2 cột */
+@media (max-width: 1024px) {
+    .featureGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Responsive: Trên điện thoại thì về 1 cột */
+@media (max-width: 640px) {
+    .featureGrid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .featureCard {
@@ -319,10 +334,25 @@
 
 .userTypeGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    /* Ép buộc 4 cột bằng nhau */
+    grid-template-columns: repeat(4, 1fr);
     gap: 1.5rem;
-    max-width: 1000px;
+    max-width: 1200px; /* Tăng max-width để đủ chỗ cho 4 cột */
     margin: 0 auto;
+}
+
+/* Responsive: Trên màn hình nhỏ hơn 1024px thì chuyển về 2 cột */
+@media (max-width: 1024px) {
+    .userTypeGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Responsive: Trên điện thoại thì về 1 cột */
+@media (max-width: 640px) {
+    .userTypeGrid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .userTypeCard {

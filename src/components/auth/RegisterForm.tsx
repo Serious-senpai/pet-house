@@ -12,8 +12,8 @@ interface RegisterFormProps {
 }
 
 const roleOptions: { value: UserRole; label: string; description: string }[] = [
-    { value: 'pet_owner', label: 'Pet Owner', description: 'Register as a customer to manage your pets' },
-    { value: 'vet', label: 'Veterinarian', description: 'Register as a veterinarian' },
+    { value: 'pet_owner', label: 'Pet Owner', description: 'Register as a pet owner to manage your pets' },
+    { value: 'vet', label: 'Veterinarian', description: 'Register as a veterinarian ' },
     { value: 'staff', label: 'Staff', description: 'Register as a staff member' },
     { value: 'admin', label: 'Administrator', description: 'Register as an administrator' },
 ];
