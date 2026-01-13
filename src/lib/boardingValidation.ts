@@ -13,7 +13,7 @@ export interface ValidationError {
  * @param checkOutDate - Check-out date
  * @returns Validation result
  */
-export function validateStep1(
+export function validateBookingDatesAndPet(
     selectedPetId: string,
     checkInDate: string,
     checkOutDate: string
@@ -46,7 +46,7 @@ export function validateStep1(
  * @param selectedRoomId - Selected room ID
  * @returns Validation result
  */
-export function validateStep2(selectedRoomId: string): ValidationError {
+export function validateRoomSelection(selectedRoomId: string): ValidationError {
     if (!selectedRoomId) {
         return {
             valid: false,
@@ -67,7 +67,7 @@ export function validateStep2(selectedRoomId: string): ValidationError {
  * @param confirmedRequirements - Requirements confirmation
  * @returns Validation result
  */
-export function validateStep3(
+export function validateBookingConfirmation(
     confirmedTerms: boolean,
     confirmedDates: boolean,
     confirmedRequirements: boolean
