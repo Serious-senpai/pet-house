@@ -126,32 +126,28 @@ export default function StaffBoardingDashboard() {
             const { error } = await supabase.from('boarding_bookings').update({
                 status: 'checked_in',
                 staff_checked_in_by: user?.id,
+                payment_status: 'unpaid',
                 updated_at: new Date().toISOString()
             }).eq('id', id);
             if (error) throw error;
             setBookings(prev => prev.filter(b => b.id !== id));
-        } catch (err: unknown) {
-            const e = err as Error;
-            setError(e.message);
-        }
+        } catch (e: any) { setError(e.message); }
         finally { setActionId(null); }
     };
 
     const handleCheckOut = async (id: string) => {
-        if (!confirm('Confirm check out for this pet?')) return;
+        if (!confirm('Confirm check out? Payment status will be set to PAID.')) return; // <-- Cảnh báo
         setActionId(id);
         try {
             const { error } = await supabase.from('boarding_bookings').update({
                 status: 'completed',
                 staff_checked_out_by: user?.id,
+                payment_status: 'paid',
                 updated_at: new Date().toISOString()
             }).eq('id', id);
             if (error) throw error;
             setBookings(prev => prev.filter(b => b.id !== id));
-        } catch (err: unknown) {
-            const e = err as Error;
-            setError(e.message);
-        }
+        } catch (e: any) { setError(e.message); }
         finally { setActionId(null); }
     };
 

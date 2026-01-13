@@ -91,11 +91,17 @@ export default function Header() {
 
                                         {/* Admin Dashboard */}
                                         {user.role === 'admin' && (
-                                            <Link href="/admin/dashboard" className={styles.menuItem} onClick={() => setIsMenuOpen(false)}>
-                                                <span>📊</span> Admin Dashboard
-                                            </Link>
+                                            <>
+                                                <Link href="/admin/dashboard" className={styles.menuItem} onClick={() => setIsMenuOpen(false)}>
+                                                    <span>📊</span> Dashboard
+                                                </Link>
+                                                {/* ITEM MỚI THÊM VÀO ĐÂY */}
+                                                <Link href="/admin/payments" className={styles.menuItem} onClick={() => setIsMenuOpen(false)}>
+                                                    <span>💳</span> Payments
+                                                </Link>
+                                                <div className={styles.menuDivider}></div>
+                                            </>
                                         )}
-
                                         {/* Appointments (Ai cũng có) */}
                                         <Link href="/appointments" className={styles.menuItem} onClick={() => setIsMenuOpen(false)}>
                                             <span>📅</span> Appointments
