@@ -4,24 +4,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
 import { BoardingRoom, Pet } from '@/types';
+import { calcDays, calcTotal, formatDate, formatPrice } from '@/lib/boardingUtils';
+import { validateStep1, validateStep2, validateStep3 } from '@/lib/boardingValidation';
 import styles from './BoardingRegistration.module.css';
-
-// function addDays(date: Date, days: number) {
-//     const result = new Date(date);
-//     result.setDate(result.getDate() + days);
-//     return result;
-// }
-
-function calcDays(checkIn: string, checkOut: string): number {
-    if (!checkIn || !checkOut) return 0;
-    const inDate = new Date(checkIn);
-    const outDate = new Date(checkOut);
-    return Math.ceil((outDate.getTime() - inDate.getTime()) / (1000 * 60 * 60 * 24));
-}
-
-function calcTotal(pricePerDay: number, days: number): number {
-    return pricePerDay * Math.max(1, days);
-}
 
 export default function BoardingRegistration() {
     const { user } = useAuth();
@@ -50,7 +35,8 @@ export default function BoardingRegistration() {
     const daysCount = calcDays(checkInDate, checkOutDate);
     const totalPrice = selectedRoom ? calcTotal(selectedRoom.price_per_day, daysCount) : 0;
 
-    const allConfirmed = confirmedTerms && confirmedDates && confirmedRequirements;
+    const confirmationValidation = validateStep3(confirmedTerms, confirmedDates, confirmedRequirements);
+    const allConfirmed = confirmationValidation.valid;
 
     // Load user's pets on mount
     useEffect(() => {
@@ -106,16 +92,9 @@ export default function BoardingRegistration() {
         e.preventDefault();
         setError(null);
 
-        if (!selectedPetId || !checkInDate || !checkOutDate) {
-            setError('Please select pet and dates');
-            return;
-        }
-
-        const inDate = new Date(checkInDate);
-        const outDate = new Date(checkOutDate);
-
-        if (outDate <= inDate) {
-            setError('Check-out date must be after check-in date');
+        const validation = validateStep1(selectedPetId, checkInDate, checkOutDate);
+        if (!validation.valid) {
+            setError(validation.message);
             return;
         }
 
@@ -128,8 +107,9 @@ export default function BoardingRegistration() {
         e.preventDefault();
         setError(null);
 
-        if (!selectedRoomId) {
-            setError('Please select a room');
+        const validation = validateStep2(selectedRoomId);
+        if (!validation.valid) {
+            setError(validation.message);
             return;
         }
 
@@ -139,6 +119,12 @@ export default function BoardingRegistration() {
     const handleConfirmBooking = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
+
+        const validation = validateStep3(confirmedTerms, confirmedDates, confirmedRequirements);
+        if (!validation.valid) {
+            setError(validation.message);
+            return;
+        }
 
         if (!user || !selectedPetId || !selectedRoom) return;
 
@@ -325,11 +311,11 @@ export default function BoardingRegistration() {
                             </div>
                             <div className={styles.summaryItem}>
                                 <span>Check-in:</span>
-                                <strong>{new Date(checkInDate).toLocaleDateString()}</strong>
+                                <strong>{formatDate(checkInDate)}</strong>
                             </div>
                             <div className={styles.summaryItem}>
                                 <span>Check-out:</span>
-                                <strong>{new Date(checkOutDate).toLocaleDateString()}</strong>
+                                <strong>{formatDate(checkOutDate)}</strong>
                             </div>
                             <div className={styles.summaryItem}>
                                 <span>Duration:</span>
@@ -338,7 +324,7 @@ export default function BoardingRegistration() {
                             <div className={styles.summaryDivider}></div>
                             <div className={styles.summaryItem} style={{ fontSize: '1.1em' }}>
                                 <span>Total Price:</span>
-                                <strong className={styles.totalPrice}>${totalPrice.toFixed(2)}</strong>
+                                <strong className={styles.totalPrice}>${formatPrice(totalPrice)}</strong>
                             </div>
                         </div>
 
@@ -388,8 +374,8 @@ export default function BoardingRegistration() {
                                 />
                                 <span>
                                     I confirm the check-in date of{' '}
-                                    <strong>{new Date(checkInDate).toLocaleDateString()}</strong> and check-out
-                                    date of <strong>{new Date(checkOutDate).toLocaleDateString()}</strong>
+                                    <strong>{formatDate(checkInDate)}</strong> and check-out
+                                    date of <strong>{formatDate(checkOutDate)}</strong>
                                 </span>
                             </label>
 
@@ -413,7 +399,7 @@ export default function BoardingRegistration() {
                                     disabled={loading}
                                 />
                                 <span>
-                                    I understand the total cost is <strong>${totalPrice.toFixed(2)}</strong> and
+                                    I understand the total cost is <strong>${formatPrice(totalPrice)}</strong> and
                                     agree to the boarding terms & conditions
                                 </span>
                             </label>
